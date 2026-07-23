@@ -1,0 +1,28 @@
+name: kredit_pintar
+description: "Aplikasi Manajemen Pinjaman & Kredit Offline"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  sqflite: ^2.4.1
+  provider: ^6.1.2
+  intl: ^0.20.2
+  pdf: ^3.11.2
+  printing: ^5.14.2
+  path_provider: ^2.1.5
+  google_fonts: ^6.2.1
+  flutter_slidable: ^3.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
