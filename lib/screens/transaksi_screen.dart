@@ -22,6 +22,8 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
   final _namaController = TextEditingController();
   final _telpController = TextEditingController();
   final _nominalController = TextEditingController();
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   DateTime _tanggalJatuhTempo = DateTime.now().add(const Duration(days: 30));
 
   double _biayaAdmin = 0;
@@ -33,6 +35,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
     _namaController.dispose();
     _telpController.dispose();
     _nominalController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -96,8 +99,12 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
 
     final provider = Provider.of<AppProvider>(context, listen: false);
 
-    // Check if nasabah is blocked
-    if (!_isNasabahBaru && _selectedNasabah != null) {
+    // Check if nasabah is selected & blocked
+    if (!_isNasabahBaru) {
+      if (_selectedNasabah == null) {
+        _showError('Silakan cari dan pilih pelanggan terlebih dahulu');
+        return;
+      }
       if (_selectedNasabah!.diblokir) {
         _showError('Nasabah ini sedang diblokir (Kartu Merah). Tidak bisa membuat transaksi baru.');
         return;
@@ -156,7 +163,9 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
     _namaController.clear();
     _telpController.clear();
     _nominalController.clear();
+    _searchController.clear();
     setState(() {
+      _searchQuery = '';
       _selectedNasabah = null;
       _biayaAdmin = 0;
       _totalBayar = 0;
@@ -182,6 +191,13 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
+        final filteredNasabah = provider.allNasabah.where((n) {
+          final q = _searchQuery.toLowerCase().trim();
+          if (q.isEmpty) return true;
+          return n.nama.toLowerCase().contains(q) ||
+              n.nomorTelpon.contains(q);
+        }).toList();
+
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           child: Form(
@@ -296,59 +312,229 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                         v!.isEmpty ? 'Nomor telepon harus diisi' : null,
                   ),
                 ] else ...[
-                  // Pilih Pelanggan
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
+                  // Pilih Pelanggan (dengan Fitur Pencarian Nama)
+                  if (_selectedNasabah == null) ...[
+                    TextFormField(
+                      controller: _searchController,
+                      onChanged: (val) {
+                        setState(() {
+                          _searchQuery = val;
+                        });
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: '🔍 Cari nama atau no. telp nasabah...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFFD4AF37),
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                        ),
                       ),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<Nasabah>(
-                        isExpanded: true,
-                        hint: Text(
-                          'Pilih Pelanggan',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
-                          ),
+                    const SizedBox(height: 10),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 220),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.2),
                         ),
-                        value: _selectedNasabah,
-                        dropdownColor: const Color(0xFF1E293B),
-                        style: const TextStyle(color: Colors.white),
-                        icon: Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.white.withOpacity(0.5),
-                        ),
-                        items: provider.allNasabah
-                            .map((n) => DropdownMenuItem<Nasabah>(
-                                  value: n,
-                                  child: Row(
+                      ),
+                      child: filteredNasabah.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Center(
+                                child: Text(
+                                  'Nasabah tidak ditemukan',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.4),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: filteredNasabah.length,
+                              separatorBuilder: (_, __) => Divider(
+                                color: Colors.white.withOpacity(0.05),
+                                height: 1,
+                              ),
+                              itemBuilder: (context, index) {
+                                final n = filteredNasabah[index];
+                                return ListTile(
+                                  dense: true,
+                                  leading: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: n.diblokir
+                                        ? Colors.red.withOpacity(0.2)
+                                        : const Color(0xFFD4AF37).withOpacity(0.2),
+                                    child: Text(
+                                      n.nama.isNotEmpty ? n.nama[0].toUpperCase() : '?',
+                                      style: TextStyle(
+                                        color: n.diblokir
+                                            ? Colors.red
+                                            : const Color(0xFFD4AF37),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    n.nama,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    n.nomorTelpon,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(n.nama),
-                                      if (n.diblokir) ...[
-                                        const SizedBox(width: 8),
-                                        const Icon(Icons.block,
-                                            size: 14, color: Colors.red),
-                                      ],
-                                      if (n.kartuKuning) ...[
-                                        const SizedBox(width: 4),
+                                      if (n.diblokir)
+                                        const Icon(Icons.block, size: 16, color: Colors.red),
+                                      if (n.kartuKuning)
                                         const Icon(Icons.warning,
-                                            size: 14,
-                                            color: Color(0xFFFFB300)),
-                                      ],
+                                            size: 16, color: Color(0xFFFFB300)),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.check_circle_outline,
+                                          color: Color(0xFFD4AF37), size: 20),
                                     ],
                                   ),
-                                ))
-                            .toList(),
-                        onChanged: (v) =>
-                            setState(() => _selectedNasabah = v),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedNasabah = n;
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: _selectedNasabah!.diblokir
+                                ? Colors.red.withOpacity(0.2)
+                                : const Color(0xFFD4AF37).withOpacity(0.2),
+                            child: Text(
+                              _selectedNasabah!.nama.isNotEmpty
+                                  ? _selectedNasabah!.nama[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: _selectedNasabah!.diblokir
+                                    ? Colors.red
+                                    : const Color(0xFFD4AF37),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        _selectedNasabah!.nama,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_selectedNasabah!.diblokir) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.block, size: 16, color: Colors.red),
+                                    ],
+                                    if (_selectedNasabah!.kartuKuning) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.warning,
+                                          size: 16, color: Color(0xFFFFB300)),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _selectedNasabah!.nomorTelpon,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedNasabah = null;
+                              });
+                            },
+                            icon: const Icon(Icons.refresh, size: 16, color: Color(0xFFD4AF37)),
+                            label: const Text(
+                              'Ganti',
+                              style: TextStyle(
+                                color: Color(0xFFD4AF37),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ],
 
                 const SizedBox(height: 24),
