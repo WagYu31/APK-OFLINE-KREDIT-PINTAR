@@ -23,11 +23,21 @@ class GroupedNasabahTransaksi {
   double get totalNominalPinjaman =>
       transaksiList.fold(0.0, (sum, t) => sum + t.nominalPinjaman);
 
+  double get totalBiayaAdmin =>
+      transaksiList.fold(0.0, (sum, t) => sum + t.biayaAdmin);
+
   double get totalHarusBayar =>
       transaksiList.fold(0.0, (sum, t) => sum + t.totalHarusBayar);
 
   double get totalSisaHutang =>
       transaksiList.fold(0.0, (sum, t) => sum + t.sisaHutang);
+
+  String get earliestTanggalPinjam {
+    if (transaksiList.isEmpty) return '';
+    final sorted = List<Transaksi>.from(transaksiList)
+      ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+    return sorted.first.tanggalPinjam;
+  }
 
   String get earliestJatuhTempo {
     if (transaksiList.isEmpty) return '';
@@ -1092,6 +1102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _showTransaksiAktifModal(BuildContext context, AppProvider provider) {
     final activeList =
         provider.allTransaksi.where((t) => t.status != 'lunas').toList();
+    final groupedActiveList = _groupTransaksiByNasabah(activeList, provider);
 
     showModalBottomSheet(
       context: context,
@@ -1151,7 +1162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             Text(
-                              '${activeList.length} nasabah sedang transaksi aktif',
+                              '${groupedActiveList.length} nasabah sedang transaksi aktif',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.white.withOpacity(0.5),
@@ -1171,9 +1182,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 12),
               const Divider(height: 1, color: Colors.white12),
 
-              // List of active transactions
+              // List of active transactions grouped by nasabah
               Expanded(
-                child: activeList.isEmpty
+                child: groupedActiveList.isEmpty
                     ? Center(
                         child: Text(
                           'Tidak ada transaksi aktif',
@@ -1182,11 +1193,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(20),
-                        itemCount: activeList.length,
+                        itemCount: groupedActiveList.length,
                         itemBuilder: (context, index) {
-                          final t = activeList[index];
-                          final nama = provider.getNasabahNama(t.nasabahId);
-                          final nasabah = provider.getNasabahFromList(t.nasabahId);
+                          final item = groupedActiveList[index];
+                          final nama = provider.getNasabahNama(item.nasabahId);
+                          final nasabah = provider.getNasabahFromList(item.nasabahId);
+                          final count = item.transaksiList.length;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
@@ -1227,14 +1239,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  nama,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        nama,
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    if (count > 1) ...[
+                                                      const SizedBox(width: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                            horizontal: 8, vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(0xFF42A5F5).withOpacity(0.2),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          border: Border.all(
+                                                            color: const Color(0xFF42A5F5).withOpacity(0.4),
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          '$count Pinjaman',
+                                                          style: const TextStyle(
+                                                            color: Color(0xFF42A5F5),
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
                                                 ),
                                                 if (nasabah != null)
                                                   Text(
@@ -1254,17 +1294,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: t.status == 'sebagian'
-                                            ? const Color(0xFFFFB300).withOpacity(0.2)
-                                            : const Color(0xFF42A5F5).withOpacity(0.2),
+                                        color: const Color(0xFF42A5F5).withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        t.status == 'sebagian' ? 'Bayar Sebagian' : 'Aktif',
-                                        style: TextStyle(
-                                          color: t.status == 'sebagian'
-                                              ? const Color(0xFFFFB300)
-                                              : const Color(0xFF42A5F5),
+                                        count > 1 ? '$count Pinjaman' : 'Aktif',
+                                        style: const TextStyle(
+                                          color: Color(0xFF42A5F5),
                                           fontWeight: FontWeight.bold,
                                           fontSize: 11,
                                         ),
@@ -1282,15 +1318,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   children: [
                                     Expanded(
                                       child: _buildModalDetailItem(
-                                        'Nominal Pinjaman',
-                                        formatRupiah(t.nominalPinjaman),
+                                        count > 1 ? 'Total Pinjaman' : 'Nominal Pinjaman',
+                                        formatRupiah(item.totalNominalPinjaman),
                                         Colors.white,
                                       ),
                                     ),
                                     Expanded(
                                       child: _buildModalDetailItem(
-                                        'Estimasi Keuntungan',
-                                        formatRupiah(t.biayaAdmin),
+                                        count > 1 ? 'Total Keuntungan' : 'Estimasi Keuntungan',
+                                        formatRupiah(item.totalBiayaAdmin),
                                         const Color(0xFF4CAF50),
                                       ),
                                     ),
@@ -1301,15 +1337,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   children: [
                                     Expanded(
                                       child: _buildModalDetailItem(
-                                        'Total Harus Bayar',
-                                        formatRupiah(t.totalHarusBayar),
+                                        count > 1 ? 'Total Harus Bayar' : 'Total Harus Bayar',
+                                        formatRupiah(item.totalHarusBayar),
                                         const Color(0xFFD4AF37),
                                       ),
                                     ),
                                     Expanded(
                                       child: _buildModalDetailItem(
-                                        'Sisa Hutang',
-                                        formatRupiah(t.sisaHutang),
+                                        count > 1 ? 'Total Sisa Hutang' : 'Sisa Hutang',
+                                        formatRupiah(item.totalSisaHutang),
                                         const Color(0xFFE53935),
                                       ),
                                     ),
@@ -1322,14 +1358,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Expanded(
                                       child: _buildModalDetailItem(
                                         'Tanggal Pinjam',
-                                        formatTanggal(t.tanggalPinjam),
+                                        formatTanggal(item.earliestTanggalPinjam),
                                         Colors.white70,
                                       ),
                                     ),
                                     Expanded(
                                       child: _buildModalDetailItem(
                                         'Jatuh Tempo',
-                                        formatTanggal(t.tanggalJatuhTempo),
+                                        formatTanggal(item.earliestJatuhTempo),
                                         const Color(0xFFFF7043),
                                       ),
                                     ),
@@ -1344,16 +1380,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: () {
-                                          Navigator.pop(ctx);
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => BayarScreen(transaksi: t),
-                                            ),
-                                          );
+                                          if (count == 1) {
+                                            Navigator.pop(ctx);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => BayarScreen(transaksi: item.transaksiList.first),
+                                              ),
+                                            );
+                                          } else {
+                                            _showSubTransaksiModal(context, provider, item, const Color(0xFF42A5F5));
+                                          }
                                         },
                                         icon: const Icon(Icons.payment, size: 16),
-                                        label: const Text('Bayar / Detail'),
+                                        label: Text(count > 1 ? 'Pilih / Detail' : 'Bayar / Detail'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFF42A5F5),
                                           foregroundColor: Colors.black,
@@ -1366,20 +1406,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     const SizedBox(width: 10),
                                     IconButton(
                                       onPressed: () async {
-                                        final confirmed = await ConfirmDialog.show(
-                                          context,
-                                          title: 'Tandai Lunas?',
-                                          message: 'Apakah anda yakin $nama sudah melunasi pembayaran?',
-                                          icon: Icons.check_circle_outline,
-                                          confirmColor: const Color(0xFF4CAF50),
-                                        );
-                                        if (confirmed) {
-                                          await provider.tandaiLunas(t);
-                                          if (ctx.mounted) Navigator.pop(ctx);
+                                        if (count == 1) {
+                                          final t = item.transaksiList.first;
+                                          final confirmed = await ConfirmDialog.show(
+                                            context,
+                                            title: 'Tandai Lunas?',
+                                            message: 'Apakah anda yakin $nama sudah melunasi pembayaran?',
+                                            icon: Icons.check_circle_outline,
+                                            confirmColor: const Color(0xFF4CAF50),
+                                          );
+                                          if (confirmed) {
+                                            await provider.tandaiLunas(t);
+                                            if (ctx.mounted) Navigator.pop(ctx);
+                                          }
+                                        } else {
+                                          final confirmed = await ConfirmDialog.show(
+                                            context,
+                                            title: 'Pelunasan Semua Pinjaman?',
+                                            message: 'Apakah anda yakin $nama sudah melunasi seluruh ($count) pembayaran pinjaman?',
+                                            icon: Icons.check_circle_outline,
+                                            confirmColor: const Color(0xFF4CAF50),
+                                          );
+                                          if (confirmed) {
+                                            for (var t in item.transaksiList) {
+                                              await provider.tandaiLunas(t);
+                                            }
+                                            if (ctx.mounted) Navigator.pop(ctx);
+                                          }
                                         }
                                       },
                                       icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
-                                      tooltip: 'Tandai Lunas',
+                                      tooltip: 'Tandai Lunas Semua',
                                     ),
                                   ],
                                 ),
