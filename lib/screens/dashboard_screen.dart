@@ -2,11 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
+import '../models/nasabah.dart';
 import '../models/transaksi.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/card_badge.dart';
 import '../widgets/confirm_dialog.dart';
 import 'bayar_screen.dart';
+
+class GroupedNasabahTransaksi {
+  final int nasabahId;
+  final Nasabah? nasabah;
+  final List<Transaksi> transaksiList;
+
+  GroupedNasabahTransaksi({
+    required this.nasabahId,
+    this.nasabah,
+    required this.transaksiList,
+  });
+
+  double get totalNominalPinjaman =>
+      transaksiList.fold(0.0, (sum, t) => sum + t.nominalPinjaman);
+
+  double get totalHarusBayar =>
+      transaksiList.fold(0.0, (sum, t) => sum + t.totalHarusBayar);
+
+  double get totalSisaHutang =>
+      transaksiList.fold(0.0, (sum, t) => sum + t.sisaHutang);
+
+  String get earliestJatuhTempo {
+    if (transaksiList.isEmpty) return '';
+    final sorted = List<Transaksi>.from(transaksiList)
+      ..sort((a, b) => a.tanggalJatuhTempo.compareTo(b.tanggalJatuhTempo));
+    return sorted.first.tanggalJatuhTempo;
+  }
+}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,21 +66,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  List<GroupedNasabahTransaksi> _groupTransaksiByNasabah(
+      List<Transaksi> rawList, AppProvider provider) {
+    final Map<int, List<Transaksi>> map = {};
+    for (var t in rawList) {
+      map.putIfAbsent(t.nasabahId, () => []).add(t);
+    }
+
+    final List<GroupedNasabahTransaksi> result = [];
+    map.forEach((nasabahId, list) {
+      final nasabah = provider.getNasabahFromList(nasabahId);
+      result.add(GroupedNasabahTransaksi(
+        nasabahId: nasabahId,
+        nasabah: nasabah,
+        transaksiList: list,
+      ));
+    });
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
         final stats = provider.statistik;
-        final jatuhTempo = provider.transaksiJatuhTempo;
-        final hutang = provider.transaksiHutang;
+        final rawJatuhTempo = provider.transaksiJatuhTempo;
+        final rawHutang = provider.transaksiHutang;
+
+        final groupedJatuhTempo =
+            _groupTransaksiByNasabah(rawJatuhTempo, provider);
+        final groupedHutang = _groupTransaksiByNasabah(rawHutang, provider);
 
         final displayedJatuhTempo = _showAllJatuhTempo
-            ? jatuhTempo
-            : jatuhTempo.take(3).toList();
+            ? groupedJatuhTempo
+            : groupedJatuhTempo.take(3).toList();
 
         final displayedHutang = _showAllHutang
-            ? hutang
-            : hutang.take(3).toList();
+            ? groupedHutang
+            : groupedHutang.take(3).toList();
 
         if (provider.isLoading) {
           return const Center(
@@ -81,21 +133,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // ③ Tabel Jatuh Tempo (3 hari)
                 _buildSectionHeader(
                   '⏰ Jatuh Tempo',
-                  '${jatuhTempo.length} nasabah',
+                  '${groupedJatuhTempo.length} nasabah',
                   const Color(0xFFFFB300),
                 ),
                 const SizedBox(height: 12),
-                if (jatuhTempo.isEmpty)
+                if (groupedJatuhTempo.isEmpty)
                   _buildEmptyState(
                     'Tidak ada nasabah jatuh tempo',
                     Icons.check_circle_outline,
                     const Color(0xFF4CAF50),
                   )
                 else ...[
-                  ...displayedJatuhTempo.map((t) => _buildTransaksiCard(
-                        context, t, provider,
-                        isJatuhTempo: true)),
-                  if (jatuhTempo.length > 3) ...[
+                  ...displayedJatuhTempo.map((item) =>
+                      _buildGroupedTransaksiCard(context, item, provider,
+                          isJatuhTempo: true)),
+                  if (groupedJatuhTempo.length > 3) ...[
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () {
@@ -119,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               _showAllJatuhTempo
                                   ? 'Sembunyikan Sebagian'
-                                  : 'Lihat Semua (${jatuhTempo.length} Nasabah)',
+                                  : 'Lihat Semua (${groupedJatuhTempo.length} Nasabah)',
                               style: const TextStyle(
                                 color: Color(0xFFFFB300),
                                 fontWeight: FontWeight.bold,
@@ -145,21 +197,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // ⑥ Tabel Punya Hutang
                 _buildSectionHeader(
                   '💰 Punya Hutang',
-                  '${hutang.length} nasabah',
+                  '${groupedHutang.length} nasabah',
                   const Color(0xFFE53935),
                 ),
                 const SizedBox(height: 12),
-                if (hutang.isEmpty)
+                if (groupedHutang.isEmpty)
                   _buildEmptyState(
                     'Tidak ada nasabah punya hutang',
                     Icons.sentiment_satisfied_alt,
                     const Color(0xFF4CAF50),
                   )
                 else ...[
-                  ...displayedHutang.map((t) => _buildTransaksiCard(
-                        context, t, provider,
-                        isHutang: true)),
-                  if (hutang.length > 3) ...[
+                  ...displayedHutang.map((item) =>
+                      _buildGroupedTransaksiCard(context, item, provider,
+                          isHutang: true)),
+                  if (groupedHutang.length > 3) ...[
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () {
@@ -183,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               _showAllHutang
                                   ? 'Sembunyikan Sebagian'
-                                  : 'Lihat Semua (${hutang.length} Nasabah)',
+                                  : 'Lihat Semua (${groupedHutang.length} Nasabah)',
                               style: const TextStyle(
                                 color: Color(0xFFE53935),
                                 fontWeight: FontWeight.bold,
@@ -409,6 +461,407 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGroupedTransaksiCard(
+    BuildContext context,
+    GroupedNasabahTransaksi item,
+    AppProvider provider, {
+    bool isJatuhTempo = false,
+    bool isHutang = false,
+  }) {
+    final nama = item.nasabah?.nama ?? provider.getNasabahNama(item.nasabahId);
+    final nasabah = item.nasabah;
+    final cardColor =
+        isHutang ? const Color(0xFFE53935) : const Color(0xFFFFB300);
+    final count = item.transaksiList.length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cardColor.withOpacity(0.12),
+            cardColor.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cardColor.withOpacity(0.25),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            if (count == 1) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BayarScreen(transaksi: item.transaksiList.first),
+                ),
+              );
+            } else {
+              _showSubTransaksiModal(context, provider, item, cardColor);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: cardColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              isHutang
+                                  ? Icons.warning_rounded
+                                  : Icons.access_time_rounded,
+                              color: cardColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        nama,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (count > 1) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF42A5F5).withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: const Color(0xFF42A5F5).withOpacity(0.4),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '$count Pinjaman',
+                                          style: const TextStyle(
+                                            color: Color(0xFF42A5F5),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                if (nasabah != null) ...[
+                                  const SizedBox(height: 2),
+                                  CardBadge(
+                                    isKuning: nasabah.kartuKuning,
+                                    isMerah: nasabah.kartuMerah,
+                                    isDiblokir: nasabah.diblokir,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (count == 1)
+                      IconButton(
+                        onPressed: () async {
+                          final t = item.transaksiList.first;
+                          final confirmed = await ConfirmDialog.show(
+                            context,
+                            title: 'Tandai Lunas?',
+                            message:
+                                'Apakah anda yakin $nama sudah melunasi pembayaran?',
+                            icon: Icons.check_circle_outline,
+                            confirmColor: const Color(0xFF4CAF50),
+                          );
+                          if (confirmed) {
+                            await provider.tandaiLunas(t);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('$nama telah lunas! ✅'),
+                                  backgroundColor: const Color(0xFF4CAF50),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.white38,
+                          size: 26,
+                        ),
+                      )
+                    else
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white38,
+                        size: 24,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildInfoChip(
+                        count > 1 ? 'Total Pinjam' : 'Pinjam',
+                        formatRupiah(item.totalNominalPinjaman)),
+                    _buildInfoChip(
+                        count > 1 ? 'Total Bayar' : 'Harus Bayar',
+                        formatRupiah(item.totalHarusBayar)),
+                    _buildInfoChip(
+                      isHutang
+                          ? (count > 1 ? 'Total Sisa' : 'Sisa')
+                          : 'Jatuh Tempo',
+                      isHutang
+                          ? formatRupiah(item.totalSisaHutang)
+                          : formatTanggal(item.earliestJatuhTempo),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSubTransaksiModal(
+    BuildContext context,
+    AppProvider provider,
+    GroupedNasabahTransaksi item,
+    Color themeColor,
+  ) {
+    final nama = item.nasabah?.nama ?? provider.getNasabahNama(item.nasabahId);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A0E1A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: themeColor.withOpacity(0.2),
+                          child: Text(
+                            nama.isNotEmpty ? nama[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              color: themeColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nama,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Daftar ${item.transaksiList.length} pinjaman aktif',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Colors.white12),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: item.transaksiList.length,
+                  itemBuilder: (context, index) {
+                    final t = item.transaksiList[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: themeColor.withOpacity(0.25),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Pinjaman #${index + 1}',
+                                style: TextStyle(
+                                  color: themeColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: t.status == 'sebagian'
+                                      ? const Color(0xFFFFB300).withOpacity(0.2)
+                                      : const Color(0xFF42A5F5).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  t.status == 'sebagian'
+                                      ? 'Bayar Sebagian'
+                                      : 'Aktif',
+                                  style: TextStyle(
+                                    color: t.status == 'sebagian'
+                                        ? const Color(0xFFFFB300)
+                                        : const Color(0xFF42A5F5),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildInfoChip('Pinjam', formatRupiah(t.nominalPinjaman)),
+                              _buildInfoChip('Harus Bayar', formatRupiah(t.totalHarusBayar)),
+                              _buildInfoChip('Jatuh Tempo', formatTanggal(t.tanggalJatuhTempo)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => BayarScreen(transaksi: t),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.payment, size: 16),
+                                  label: const Text('Bayar / Detail Pinjaman Ini'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: themeColor,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () async {
+                                  final confirmed = await ConfirmDialog.show(
+                                    context,
+                                    title: 'Tandai Lunas?',
+                                    message:
+                                        'Apakah anda yakin pinjaman #${index + 1} $nama sudah melunasi pembayaran?',
+                                    icon: Icons.check_circle_outline,
+                                    confirmColor: const Color(0xFF4CAF50),
+                                  );
+                                  if (confirmed) {
+                                    await provider.tandaiLunas(t);
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                  }
+                                },
+                                icon: const Icon(Icons.check_circle,
+                                    color: Color(0xFF4CAF50), size: 26),
+                                tooltip: 'Tandai Lunas',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
