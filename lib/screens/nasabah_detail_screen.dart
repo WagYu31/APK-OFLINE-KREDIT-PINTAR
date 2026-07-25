@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../providers/app_provider.dart';
 import '../models/nasabah.dart';
 import '../models/transaksi.dart';
@@ -53,6 +56,308 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
     } catch (_) {
       return date;
     }
+  }
+
+  Future<void> _exportPdf() async {
+    final pdf = pw.Document();
+
+    final totalPinjaman = _transaksiList.fold(0.0, (sum, t) => sum + t.nominalPinjaman);
+    final totalHarusBayar = _transaksiList.fold(0.0, (sum, t) => sum + t.totalHarusBayar);
+    final totalKeuntungan = _transaksiList.fold(0.0, (sum, t) => sum + t.biayaAdmin);
+    final totalSisaHutang = _transaksiList.fold(0.0, (sum, t) => sum + t.sisaHutang);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(28),
+        header: (pw.Context context) {
+          return pw.Container(
+            alignment: pw.Alignment.centerRight,
+            margin: const pw.EdgeInsets.only(bottom: 10),
+            child: pw.Text(
+              'Sukron08 - Laporan Rekapan Transaksi Nasabah',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          );
+        },
+        footer: (pw.Context context) {
+          return pw.Container(
+            alignment: pw.Alignment.center,
+            margin: const pw.EdgeInsets.only(top: 10),
+            child: pw.Text(
+              'Halaman ${context.pageNumber} dari ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          );
+        },
+        build: (pw.Context context) {
+          return [
+            // Title Header
+            pw.Center(
+              child: pw.Text(
+                'REKAPAN TRANSAKSI NASABAH',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue900,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
+              child: pw.Text(
+                'Sukron08 - Laporan Riwayat Pinjaman & Pembayaran',
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Divider(thickness: 1, color: PdfColors.grey400),
+            pw.SizedBox(height: 10),
+
+            // Profile Info Box
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(8),
+                border: pw.Border.all(color: PdfColors.grey300),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'NAMA NASABAH: ${_nasabah.nama.toUpperCase()}',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue900,
+                        ),
+                      ),
+                      pw.Text(
+                        'No Telp: ${_nasabah.nomorTelpon}',
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                      ),
+                    ],
+                  ),
+                  if (_nasabah.kartuKuning || _nasabah.kartuMerah || _nasabah.diblokir) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Status Badge: ${_nasabah.diblokir ? "[DIBLOKIR] " : ""}${_nasabah.kartuMerah ? "[KARTU MERAH] " : ""}${_nasabah.kartuKuning ? "[KARTU KUNING: ${_nasabah.alasanKartuKuning ?? '-'}]" : ""}',
+                      style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+                    ),
+                  ],
+                  pw.SizedBox(height: 8),
+                  pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+                  pw.SizedBox(height: 6),
+
+                  // Summary Row
+                  pw.Row(
+                    children: [
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Total Pinjaman:', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
+                            pw.Text(formatRupiah(totalPinjaman), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Total Keuntungan:', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
+                            pw.Text(formatRupiah(totalKeuntungan), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Total Harus Bayar:', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
+                            pw.Text(formatRupiah(totalHarusBayar), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Sisa Hutang Aktif:', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
+                            pw.Text(formatRupiah(totalSisaHutang), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            pw.SizedBox(height: 16),
+            pw.Text(
+              '📋 DAFTAR RIWAYAT TRANSAKSI (${_transaksiList.length} Transaksi)',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+            ),
+            pw.SizedBox(height: 8),
+
+            if (_transaksiList.isEmpty)
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                alignment: pw.Alignment.center,
+                child: pw.Text('Belum ada riwayat transaksi.', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+              )
+            else
+              ..._transaksiList.asMap().entries.map((txEntry) {
+                final index = txEntry.key + 1;
+                final t = txEntry.value;
+
+                return pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 10),
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.white,
+                    borderRadius: pw.BorderRadius.circular(8),
+                    border: pw.Border.all(color: PdfColors.grey400, width: 0.6),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Header Transaksi
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            'Pinjaman #$index - Tanggal Pinjam: ${formatTanggal(t.tanggalPinjam)}',
+                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                          ),
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: pw.BoxDecoration(
+                              color: t.status == 'lunas' ? PdfColors.green100 : PdfColors.orange100,
+                              borderRadius: pw.BorderRadius.circular(4),
+                            ),
+                            child: pw.Text(
+                              t.status.toUpperCase(),
+                              style: pw.TextStyle(
+                                fontSize: 8,
+                                fontWeight: pw.FontWeight.bold,
+                                color: t.status == 'lunas' ? PdfColors.green800 : PdfColors.orange900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 6),
+
+                      // Details Grid
+                      pw.Row(
+                        children: [
+                          pw.Expanded(
+                            child: pw.Text('Nominal Pinjam: ${formatRupiah(t.nominalPinjaman)}',
+                                style: const pw.TextStyle(fontSize: 8.5)),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text('Keuntungan/Admin: ${formatRupiah(t.biayaAdmin)}',
+                                style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.green800)),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Row(
+                        children: [
+                          pw.Expanded(
+                            child: pw.Text('Total Harus Bayar: ${formatRupiah(t.totalHarusBayar)}',
+                                style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text('Sisa Hutang: ${formatRupiah(t.sisaHutang)}',
+                                style: pw.TextStyle(fontSize: 8.5, color: PdfColors.red800)),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text('Jatuh Tempo: ${formatTanggal(t.tanggalJatuhTempo)}',
+                          style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey800)),
+
+                      // Table Riwayat Pembayaran / Angsuran
+                      if (t.riwayatPembayaran.isNotEmpty) ...[
+                        pw.SizedBox(height: 6),
+                        pw.Text('Riwayat Pembayaran / Angsuran:',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                        pw.SizedBox(height: 3),
+                        pw.Table(
+                          border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+                          children: [
+                            pw.TableRow(
+                              decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                              children: [
+                                pw.Padding(
+                                    padding: const pw.EdgeInsets.all(3),
+                                    child: pw.Text('No', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                pw.Padding(
+                                    padding: const pw.EdgeInsets.all(3),
+                                    child: pw.Text('Tanggal Bayar', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                pw.Padding(
+                                    padding: const pw.EdgeInsets.all(3),
+                                    child: pw.Text('Nominal Bayar', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                pw.Padding(
+                                    padding: const pw.EdgeInsets.all(3),
+                                    child: pw.Text('Janji Bayar Berikutnya', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                              ],
+                            ),
+                            ...t.riwayatPembayaran.asMap().entries.map((pEntry) {
+                              final pIdx = pEntry.key + 1;
+                              final p = pEntry.value;
+                              return pw.TableRow(
+                                children: [
+                                  pw.Padding(
+                                      padding: const pw.EdgeInsets.all(3),
+                                      child: pw.Text('$pIdx', style: const pw.TextStyle(fontSize: 7.5))),
+                                  pw.Padding(
+                                      padding: const pw.EdgeInsets.all(3),
+                                      child: pw.Text(formatTanggal(p.tanggal), style: const pw.TextStyle(fontSize: 7.5))),
+                                  pw.Padding(
+                                      padding: const pw.EdgeInsets.all(3),
+                                      child: pw.Text(formatRupiah(p.nominal), style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                  pw.Padding(
+                                      padding: const pw.EdgeInsets.all(3),
+                                      child: pw.Text(
+                                          p.tanggalJanjiBerikutnya != null
+                                              ? formatTanggal(p.tanggalJanjiBerikutnya!)
+                                              : '-',
+                                          style: const pw.TextStyle(fontSize: 7.5))),
+                                ],
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+
+            pw.SizedBox(height: 16),
+            pw.Divider(thickness: 1, color: PdfColors.grey400),
+            pw.SizedBox(height: 6),
+            pw.Text(
+              'Dicetak otomatis pada: ${DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(DateTime.now())}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Rekapan_${_nasabah.nama.replaceAll(' ', '_')}.pdf',
+    );
   }
   Future<void> _showEditDialog(AppProvider provider) async {
     final namaController = TextEditingController(text: _nasabah.nama);
@@ -445,6 +750,12 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                 }
               },
             ),
+          // Export PDF button
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: Color(0xFF42A5F5)),
+            onPressed: _exportPdf,
+            tooltip: 'Export PDF',
+          ),
           // Edit button
           IconButton(
             icon: const Icon(Icons.edit, color: Color(0xFFD4AF37)),
@@ -611,23 +922,47 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                       ),
                     ],
 
-                    // Edit Data button
+                    // Action Buttons Row (Edit & Export PDF)
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showEditDialog(provider),
-                        icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Edit Data Nasabah'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFD4AF37),
-                          side: const BorderSide(color: Color(0xFFD4AF37)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showEditDialog(provider),
+                              icon: const Icon(Icons.edit, size: 16),
+                              label: const Text('Edit Data', style: TextStyle(fontSize: 13)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFD4AF37),
+                                side: const BorderSide(color: Color(0xFFD4AF37)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: ElevatedButton.icon(
+                              onPressed: _exportPdf,
+                              icon: const Icon(Icons.picture_as_pdf, size: 16),
+                              label: const Text('Export PDF', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF42A5F5),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
