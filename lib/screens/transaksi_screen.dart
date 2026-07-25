@@ -105,8 +105,8 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
         _showError('Silakan cari dan pilih pelanggan terlebih dahulu');
         return;
       }
-      if (_selectedNasabah!.diblokir) {
-        _showError('Nasabah ini sedang diblokir (Kartu Merah). Tidak bisa membuat transaksi baru.');
+      if (_selectedNasabah!.kartuMerah || _selectedNasabah!.diblokir) {
+        _showError('Nasabah ini terkena Kartu Merah (Diblokir). Tidak bisa membuat transaksi baru.');
         return;
       }
     }
@@ -391,17 +391,19 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                               ),
                               itemBuilder: (context, index) {
                                 final n = filteredNasabah[index];
+                                final isBlocked = n.kartuMerah || n.diblokir;
+
                                 return ListTile(
                                   dense: true,
                                   leading: CircleAvatar(
                                     radius: 16,
-                                    backgroundColor: n.diblokir
+                                    backgroundColor: isBlocked
                                         ? Colors.red.withOpacity(0.2)
                                         : const Color(0xFFD4AF37).withOpacity(0.2),
                                     child: Text(
                                       n.nama.isNotEmpty ? n.nama[0].toUpperCase() : '?',
                                       style: TextStyle(
-                                        color: n.diblokir
+                                        color: isBlocked
                                             ? Colors.red
                                             : const Color(0xFFD4AF37),
                                         fontWeight: FontWeight.bold,
@@ -409,35 +411,74 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                                       ),
                                     ),
                                   ),
-                                  title: Text(
-                                    n.nama,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
+                                  title: Row(
+                                    children: [
+                                      Text(
+                                        n.nama,
+                                        style: TextStyle(
+                                          color: isBlocked ? Colors.white38 : Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                          decoration: isBlocked ? TextDecoration.lineThrough : null,
+                                        ),
+                                      ),
+                                      if (isBlocked) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Text(
+                                            '⛔ Merah',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   subtitle: Text(
                                     n.nomorTelpon,
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
+                                      color: Colors.white.withOpacity(isBlocked ? 0.25 : 0.5),
                                       fontSize: 12,
                                     ),
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      if (n.diblokir)
-                                        const Icon(Icons.block, size: 16, color: Colors.red),
                                       if (n.kartuKuning)
                                         const Icon(Icons.warning,
                                             size: 16, color: Color(0xFFFFB300)),
                                       const SizedBox(width: 6),
-                                      const Icon(Icons.check_circle_outline,
-                                          color: Color(0xFFD4AF37), size: 20),
+                                      Icon(
+                                        isBlocked ? Icons.lock : Icons.check_circle_outline,
+                                        color: isBlocked ? Colors.red : const Color(0xFFD4AF37),
+                                        size: 20,
+                                      ),
                                     ],
                                   ),
                                   onTap: () {
+                                    if (isBlocked) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            '❌ Nasabah "${n.nama}" terkena Kartu Merah (Diblokir). Tidak bisa membuat transaksi baru!',
+                                          ),
+                                          backgroundColor: const Color(0xFFE53935),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
                                     setState(() {
                                       _selectedNasabah = n;
                                     });
