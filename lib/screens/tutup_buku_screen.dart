@@ -29,7 +29,114 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     return formatter.format(amount);
   }
 
+  Future<bool> _checkActiveTransaksiBeforeProceed() async {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    final activeTransaksi =
+        provider.allTransaksi.where((t) => t.status != 'lunas').toList();
+
+    if (activeTransaksi.isNotEmpty) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: const Color(0xFFE53935).withOpacity(0.5),
+              width: 1.5,
+            ),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFE53935),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Masih Ada Transaksi Aktif!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tutup buku tidak dapat dilakukan karena masih terdapat ${activeTransaksi.length} transaksi/nasabah yang belum lunas!',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE53935).withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Color(0xFFE53935), size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Semua transaksi harus dibersihkan/dilunasi terlebih dahulu sebelum tutup buku.',
+                        style: TextStyle(
+                          color: Color(0xFFFF8A80),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text('Mengerti', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _prosesTutupBuku() async {
+    if (!await _checkActiveTransaksiBeforeProceed()) return;
+
     final provider = Provider.of<AppProvider>(context, listen: false);
 
     final confirmed = await ConfirmDialog.show(
@@ -67,60 +174,318 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
   Future<void> _exportPdf() async {
     if (_tutupBukuData == null) return;
+    if (!await _checkActiveTransaksiBeforeProceed()) return;
+
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    final data = _tutupBukuData!;
+    final allNasabah = provider.allNasabah;
+    final allTransaksi = provider.allTransaksi;
 
     final pdf = pw.Document();
-    final data = _tutupBukuData!;
+
+    String formatTanggal(String isoDate) {
+      if (isoDate.isEmpty) return '-';
+      try {
+        final dt = DateTime.parse(isoDate);
+        return DateFormat('dd MMM yyyy', 'id_ID').format(dt);
+      } catch (_) {
+        return isoDate;
+      }
+    }
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Center(
-                child: pw.Text(
-                  'LAPORAN TUTUP BUKU ${data['tahun']}',
-                  style: pw.TextStyle(
-                    fontSize: 20,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.Center(
-                child: pw.Text(
-                  'Kredit Pintar - Manajemen Pinjaman',
-                  style: const pw.TextStyle(fontSize: 12),
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(),
-              pw.SizedBox(height: 20),
-              _pdfRow('Modal Awal',
-                  formatRupiah((data['modalAwal'] as num).toDouble())),
-              _pdfRow('Total Keuntungan',
-                  formatRupiah((data['totalKeuntungan'] as num).toDouble())),
-              _pdfRow('Total Pinjaman',
-                  formatRupiah((data['totalPinjaman'] as num).toDouble())),
-              _pdfRow('Total Pengembalian',
-                  formatRupiah((data['totalPengembalian'] as num).toDouble())),
-              pw.SizedBox(height: 10),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              _pdfRow('Total Transaksi', '${data['totalTransaksi']}'),
-              _pdfRow('Total Nasabah', '${data['totalNasabah']}'),
-              _pdfRow('Nasabah Baru', '${data['totalNasabahBaru']}'),
-              _pdfRow('Kartu Kuning', '${data['totalKartuKuning']}'),
-              _pdfRow('Kartu Merah', '${data['totalKartuMerah']}'),
-              pw.SizedBox(height: 30),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                'Dicetak: ${DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(DateTime.now())}',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-            ],
+        margin: const pw.EdgeInsets.all(28),
+        header: (pw.Context context) {
+          return pw.Container(
+            alignment: pw.Alignment.centerRight,
+            margin: const pw.EdgeInsets.only(bottom: 10),
+            child: pw.Text(
+              'Sukron08 - Laporan Tutup Buku & Rekapan Nasabah',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
           );
+        },
+        footer: (pw.Context context) {
+          return pw.Container(
+            alignment: pw.Alignment.center,
+            margin: const pw.EdgeInsets.only(top: 10),
+            child: pw.Text(
+              'Halaman ${context.pageNumber} dari ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          );
+        },
+        build: (pw.Context context) {
+          return [
+            // Title Block
+            pw.Center(
+              child: pw.Text(
+                'LAPORAN TUTUP BUKU TAHUN ${data['tahun']}',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue900,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
+              child: pw.Text(
+                'Sukron08 - Rekapan Data Keuangan & Riwayat Nasabah',
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Divider(thickness: 1, color: PdfColors.grey400),
+            pw.SizedBox(height: 10),
+
+            // Summary Table
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(8),
+                border: pw.Border.all(color: PdfColors.grey300),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    '📊 RINGKASAN REKAP TUTUP BUKU TAHUN ${data['tahun']}',
+                    style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                  ),
+                  pw.SizedBox(height: 8),
+                  _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
+                  _pdfRow('Total Keuntungan', formatRupiah((data['totalKeuntungan'] as num).toDouble())),
+                  _pdfRow('Total Pinjaman', formatRupiah((data['totalPinjaman'] as num).toDouble())),
+                  _pdfRow('Total Pengembalian', formatRupiah((data['totalPengembalian'] as num).toDouble())),
+                  pw.SizedBox(height: 6),
+                  pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+                  pw.SizedBox(height: 6),
+                  _pdfRow('Total Transaksi', '${data['totalTransaksi']}'),
+                  _pdfRow('Total Nasabah', '${data['totalNasabah']}'),
+                  _pdfRow('Nasabah Baru', '${data['totalNasabahBaru']}'),
+                  _pdfRow('Kartu Kuning', '${data['totalKartuKuning']}'),
+                  _pdfRow('Kartu Merah', '${data['totalKartuMerah']}'),
+                ],
+              ),
+            ),
+
+            pw.SizedBox(height: 16),
+            pw.Divider(thickness: 1.5, color: PdfColors.black),
+            pw.SizedBox(height: 12),
+
+            // Section Header: Nasabah & Riwayat Transaksi
+            pw.Text(
+              '📋 DATA TRANSAKSI & RIWAYAT SETIAP NASABAH',
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Rekapan lengkap seluruh riwayat transaksi untuk setiap nasabah',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+            ),
+            pw.SizedBox(height: 10),
+
+            // Loop every Nasabah
+            ...allNasabah.map((nasabah) {
+              final txList = allTransaksi.where((t) => t.nasabahId == nasabah.id).toList();
+
+              return pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 14),
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+                  borderRadius: pw.BorderRadius.circular(8),
+                  color: PdfColors.white,
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Nasabah Header Row
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          'NASABAH: ${nasabah.nama.toUpperCase()}',
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blue900,
+                          ),
+                        ),
+                        pw.Text(
+                          'No Telp: ${nasabah.nomorTelpon}',
+                          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                        ),
+                      ],
+                    ),
+                    if (nasabah.kartuKuning || nasabah.kartuMerah || nasabah.diblokir) ...[
+                      pw.SizedBox(height: 3),
+                      pw.Text(
+                        'Badge Status: ${nasabah.diblokir ? "[DIBLOKIR] " : ""}${nasabah.kartuMerah ? "[KARTU MERAH] " : ""}${nasabah.kartuKuning ? "[KARTU KUNING: ${nasabah.alasanKartuKuning ?? '-'}]" : ""}',
+                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+                      ),
+                    ],
+                    pw.SizedBox(height: 6),
+                    pw.Divider(thickness: 0.5, color: PdfColors.grey300),
+                    pw.SizedBox(height: 6),
+
+                    // Transaksi List for this Nasabah
+                    if (txList.isEmpty)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                        child: pw.Text(
+                          'Belum ada transaksi',
+                          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                        ),
+                      )
+                    else
+                      ...txList.asMap().entries.map((txEntry) {
+                        final txIndex = txEntry.key + 1;
+                        final t = txEntry.value;
+
+                        return pw.Container(
+                          margin: const pw.EdgeInsets.only(bottom: 8),
+                          padding: const pw.EdgeInsets.all(8),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.grey50,
+                            borderRadius: pw.BorderRadius.circular(6),
+                            border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                          ),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              // Header Transaksi
+                              pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text(
+                                    'Pinjaman #$txIndex - Tanggal Pinjam: ${formatTanggal(t.tanggalPinjam)}',
+                                    style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                  pw.Container(
+                                    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: pw.BoxDecoration(
+                                      color: t.status == 'lunas' ? PdfColors.green100 : PdfColors.orange100,
+                                      borderRadius: pw.BorderRadius.circular(4),
+                                    ),
+                                    child: pw.Text(
+                                      t.status.toUpperCase(),
+                                      style: pw.TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: pw.FontWeight.bold,
+                                        color: t.status == 'lunas' ? PdfColors.green800 : PdfColors.orange900,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              pw.SizedBox(height: 4),
+
+                              // Details Row 1: Nominal & Admin
+                              pw.Row(
+                                children: [
+                                  pw.Expanded(
+                                    child: pw.Text('Nominal Pinjam: ${formatRupiah(t.nominalPinjaman)}',
+                                        style: const pw.TextStyle(fontSize: 8.5)),
+                                  ),
+                                  pw.Expanded(
+                                    child: pw.Text('Biaya Admin: ${formatRupiah(t.biayaAdmin)}',
+                                        style: const pw.TextStyle(fontSize: 8.5)),
+                                  ),
+                                ],
+                              ),
+                              pw.SizedBox(height: 2),
+                              // Details Row 2: Harus Bayar, Sisa, Jatuh Tempo
+                              pw.Row(
+                                children: [
+                                  pw.Expanded(
+                                    child: pw.Text('Total Harus Bayar: ${formatRupiah(t.totalHarusBayar)}',
+                                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                                  ),
+                                  pw.Expanded(
+                                    child: pw.Text('Sisa Hutang: ${formatRupiah(t.sisaHutang)}',
+                                        style: pw.TextStyle(fontSize: 8.5, color: PdfColors.red800)),
+                                  ),
+                                ],
+                              ),
+                              pw.SizedBox(height: 2),
+                              pw.Text('Tanggal Jatuh Tempo: ${formatTanggal(t.tanggalJatuhTempo)}',
+                                  style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey800)),
+
+                              // Table Riwayat Pembayaran (Angsuran)
+                              if (t.riwayatPembayaran.isNotEmpty) ...[
+                                pw.SizedBox(height: 6),
+                                pw.Text('Riwayat Angsuran / Pembayaran:',
+                                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                                pw.SizedBox(height: 3),
+                                pw.Table(
+                                  border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+                                  children: [
+                                    pw.TableRow(
+                                      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                                      children: [
+                                        pw.Padding(
+                                            padding: const pw.EdgeInsets.all(3),
+                                            child: pw.Text('No', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                        pw.Padding(
+                                            padding: const pw.EdgeInsets.all(3),
+                                            child: pw.Text('Tanggal Bayar', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                        pw.Padding(
+                                            padding: const pw.EdgeInsets.all(3),
+                                            child: pw.Text('Nominal Bayar', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                        pw.Padding(
+                                            padding: const pw.EdgeInsets.all(3),
+                                            child: pw.Text('Janji Bayar Berikutnya', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                      ],
+                                    ),
+                                    ...t.riwayatPembayaran.asMap().entries.map((pEntry) {
+                                      final pIdx = pEntry.key + 1;
+                                      final p = pEntry.value;
+                                      return pw.TableRow(
+                                        children: [
+                                          pw.Padding(
+                                              padding: const pw.EdgeInsets.all(3),
+                                              child: pw.Text('$pIdx', style: const pw.TextStyle(fontSize: 7.5))),
+                                          pw.Padding(
+                                              padding: const pw.EdgeInsets.all(3),
+                                              child: pw.Text(formatTanggal(p.tanggal), style: const pw.TextStyle(fontSize: 7.5))),
+                                          pw.Padding(
+                                              padding: const pw.EdgeInsets.all(3),
+                                              child: pw.Text(formatRupiah(p.nominal), style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
+                                          pw.Padding(
+                                              padding: const pw.EdgeInsets.all(3),
+                                              child: pw.Text(
+                                                  p.tanggalJanjiBerikutnya != null
+                                                      ? formatTanggal(p.tanggalJanjiBerikutnya!)
+                                                      : '-',
+                                                  style: const pw.TextStyle(fontSize: 7.5))),
+                                        ],
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              );
+            }),
+
+            pw.SizedBox(height: 20),
+            pw.Divider(thickness: 1, color: PdfColors.grey400),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              'Laporan dicetak otomatis pada: ${DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(DateTime.now())}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            ),
+          ];
         },
       ),
     );
