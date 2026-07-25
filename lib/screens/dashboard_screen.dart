@@ -8,8 +8,16 @@ import '../widgets/card_badge.dart';
 import '../widgets/confirm_dialog.dart';
 import 'bayar_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _showAllJatuhTempo = false;
+  bool _showAllHutang = false;
 
   String formatRupiah(double amount) {
     final formatter = NumberFormat.currency(
@@ -36,6 +44,14 @@ class DashboardScreen extends StatelessWidget {
         final stats = provider.statistik;
         final jatuhTempo = provider.transaksiJatuhTempo;
         final hutang = provider.transaksiHutang;
+
+        final displayedJatuhTempo = _showAllJatuhTempo
+            ? jatuhTempo
+            : jatuhTempo.take(3).toList();
+
+        final displayedHutang = _showAllHutang
+            ? hutang
+            : hutang.take(3).toList();
 
         if (provider.isLoading) {
           return const Center(
@@ -75,10 +91,55 @@ class DashboardScreen extends StatelessWidget {
                     Icons.check_circle_outline,
                     const Color(0xFF4CAF50),
                   )
-                else
-                  ...jatuhTempo.map((t) => _buildTransaksiCard(
+                else ...[
+                  ...displayedJatuhTempo.map((t) => _buildTransaksiCard(
                         context, t, provider,
                         isJatuhTempo: true)),
+                  if (jatuhTempo.length > 3) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showAllJatuhTempo = !_showAllJatuhTempo;
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB300).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFFFB300).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _showAllJatuhTempo
+                                  ? 'Sembunyikan Sebagian'
+                                  : 'Lihat Semua (${jatuhTempo.length} Nasabah)',
+                              style: const TextStyle(
+                                color: Color(0xFFFFB300),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              _showAllJatuhTempo
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: const Color(0xFFFFB300),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 28),
 
                 // ⑥ Tabel Punya Hutang
@@ -94,10 +155,55 @@ class DashboardScreen extends StatelessWidget {
                     Icons.sentiment_satisfied_alt,
                     const Color(0xFF4CAF50),
                   )
-                else
-                  ...hutang.map((t) => _buildTransaksiCard(
+                else ...[
+                  ...displayedHutang.map((t) => _buildTransaksiCard(
                         context, t, provider,
                         isHutang: true)),
+                  if (hutang.length > 3) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showAllHutang = !_showAllHutang;
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE53935).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFE53935).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _showAllHutang
+                                  ? 'Sembunyikan Sebagian'
+                                  : 'Lihat Semua (${hutang.length} Nasabah)',
+                              style: const TextStyle(
+                                color: Color(0xFFE53935),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              _showAllHutang
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: const Color(0xFFE53935),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
