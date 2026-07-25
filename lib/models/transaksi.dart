@@ -61,14 +61,14 @@ class Transaksi {
         riwayatPembayaran = riwayatPembayaran ?? [],
         createdAt = createdAt ?? DateTime.now().toIso8601String();
 
-  /// Hitung biaya admin: Rp 25.000 per Rp 100.000 pinjaman
-  static double hitungBiayaAdmin(double nominalPinjaman) {
-    return (nominalPinjaman / 100000).ceil() * 25000;
+  /// Hitung biaya admin: default Rp 25.000 per Rp 100.000 pinjaman (bisa diatur di Pengaturan)
+  static double hitungBiayaAdmin(double nominalPinjaman, {double rate = 25000}) {
+    return (nominalPinjaman / 100000).ceil() * rate;
   }
 
   /// Hitung total yang harus dibayar
-  static double hitungTotalBayar(double nominalPinjaman) {
-    return nominalPinjaman + hitungBiayaAdmin(nominalPinjaman);
+  static double hitungTotalBayar(double nominalPinjaman, {double rate = 25000}) {
+    return nominalPinjaman + hitungBiayaAdmin(nominalPinjaman, rate: rate);
   }
 
   /// Total yang sudah dibayar

@@ -37,11 +37,15 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
   }
 
   void _hitungBiaya() {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    final rate = provider.settings.biayaAdminPerKelipatan > 0
+        ? provider.settings.biayaAdminPerKelipatan
+        : 25000.0;
     final nominal =
         double.tryParse(_nominalController.text.replaceAll('.', '')) ?? 0;
     setState(() {
-      _biayaAdmin = Transaksi.hitungBiayaAdmin(nominal);
-      _totalBayar = Transaksi.hitungTotalBayar(nominal);
+      _biayaAdmin = Transaksi.hitungBiayaAdmin(nominal, rate: rate);
+      _totalBayar = Transaksi.hitungTotalBayar(nominal, rate: rate);
       _keuntungan = _biayaAdmin;
     });
   }

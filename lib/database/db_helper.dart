@@ -23,13 +23,14 @@ class DbHelper {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
             id TEXT PRIMARY KEY,
             modalAwal REAL DEFAULT 0,
             targetKeuntungan REAL DEFAULT 0,
+            biayaAdminPerKelipatan REAL DEFAULT 25000,
             tahunAktif INTEGER,
             createdAt TEXT
           )
@@ -90,16 +91,21 @@ class DbHelper {
             durationMinutes INTEGER NOT NULL
           )
         ''');
+
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS used_tokens (
+            token TEXT PRIMARY KEY,
+            usedAt TEXT NOT NULL
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
-          // Rename targetKeuntunganPersen → targetKeuntungan
           try {
             await db.execute(
               'ALTER TABLE settings RENAME COLUMN targetKeuntunganPersen TO targetKeuntungan'
             );
           } catch (_) {
-            // Column mungkin sudah benar, atau tabel baru
             try {
               await db.execute(
                 'ALTER TABLE settings ADD COLUMN targetKeuntungan REAL DEFAULT 0'
@@ -107,7 +113,6 @@ class DbHelper {
             } catch (_) {}
           }
 
-          // Buat tabel token jika belum ada
           await db.execute('''
             CREATE TABLE IF NOT EXISTS app_token (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,6 +121,14 @@ class DbHelper {
               durationMinutes INTEGER NOT NULL
             )
           ''');
+        }
+
+        if (oldVersion < 3) {
+          try {
+            await db.execute(
+              'ALTER TABLE settings ADD COLUMN biayaAdminPerKelipatan REAL DEFAULT 25000'
+            );
+          } catch (_) {}
         }
       },
     );

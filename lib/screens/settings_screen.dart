@@ -18,6 +18,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _modalController = TextEditingController();
   final _targetController = TextEditingController();
+  final _biayaAdminController = TextEditingController();
   bool _isSaving = false;
 
   @override
@@ -32,12 +33,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _targetController.text =
           provider.settings.targetKeuntungan.toInt().toString();
     }
+    final adminRate = provider.settings.biayaAdminPerKelipatan > 0
+        ? provider.settings.biayaAdminPerKelipatan
+        : 25000.0;
+    _biayaAdminController.text = adminRate.toInt().toString();
   }
 
   @override
   void dispose() {
     _modalController.dispose();
     _targetController.dispose();
+    _biayaAdminController.dispose();
     super.dispose();
   }
 
@@ -81,9 +87,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final provider = Provider.of<AppProvider>(context, listen: false);
       final target =
           double.tryParse(_targetController.text.replaceAll('.', '')) ?? 0;
+      final adminRate =
+          double.tryParse(_biayaAdminController.text.replaceAll('.', '')) ?? 25000;
+
       final settings = Settings(
         modalAwal: modal,
         targetKeuntungan: target,
+        biayaAdminPerKelipatan: adminRate > 0 ? adminRate : 25000,
         tahunAktif: DateTime.now().year,
       );
       await provider.saveSettings(settings);
@@ -119,6 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ] else ...[
               const SizedBox(height: 20),
               const Text(
-                '⚙️ Pengaturan Modal',
+                '⚙️ Pengaturan Aplikasi',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -178,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Atur modal awal dan target keuntungan',
+                'Atur modal awal, target keuntungan, dan biaya admin',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.5),
                   fontSize: 14,
@@ -252,34 +263,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderSide:
                             const BorderSide(color: Color(0xFFD4AF37)),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Color(0xFFD4AF37),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Biaya admin: Rp 25.000 per pinjaman Rp 100.000\nTarget keuntungan dihitung per tahun',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.4),
-                              fontSize: 12,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -357,6 +340,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
                             const BorderSide(color: Color(0xFF4CAF50)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Biaya Admin Input
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: const Color(0xFF42A5F5).withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🏷️ Biaya Admin (per kelipatan Rp 100.000)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF42A5F5),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Besar biaya admin untuk setiap kelipatan pinjaman Rp 100.000 (Dapat diubah kapan saja)',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _biayaAdminController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    decoration: InputDecoration(
+                      prefixText: 'Rp ',
+                      prefixStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      hintText: 'Contoh: 25000',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.15),
+                        fontSize: 20,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            const BorderSide(color: Color(0xFF42A5F5)),
                       ),
                     ),
                   ),
