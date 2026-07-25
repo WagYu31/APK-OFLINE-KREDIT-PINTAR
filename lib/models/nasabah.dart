@@ -3,6 +3,7 @@ class Nasabah {
   String nama;
   String nomorTelpon;
   bool kartuKuning;
+  String? alasanKartuKuning;
   bool kartuMerah;
   bool diblokir;
   String createdAt;
@@ -12,6 +13,7 @@ class Nasabah {
     required this.nama,
     required this.nomorTelpon,
     this.kartuKuning = false,
+    this.alasanKartuKuning,
     this.kartuMerah = false,
     this.diblokir = false,
     String? createdAt,
@@ -23,6 +25,7 @@ class Nasabah {
       'nama': nama,
       'nomorTelpon': nomorTelpon,
       'kartuKuning': kartuKuning ? 1 : 0,
+      'alasanKartuKuning': alasanKartuKuning,
       'kartuMerah': kartuMerah ? 1 : 0,
       'diblokir': diblokir ? 1 : 0,
       'createdAt': createdAt,
@@ -35,6 +38,7 @@ class Nasabah {
       nama: map['nama'] ?? '',
       nomorTelpon: map['nomorTelpon'] ?? '',
       kartuKuning: map['kartuKuning'] == 1,
+      alasanKartuKuning: map['alasanKartuKuning'],
       kartuMerah: map['kartuMerah'] == 1,
       diblokir: map['diblokir'] == 1,
       createdAt: map['createdAt'] ?? DateTime.now().toIso8601String(),
@@ -46,6 +50,7 @@ class Nasabah {
     String? nama,
     String? nomorTelpon,
     bool? kartuKuning,
+    String? alasanKartuKuning,
     bool? kartuMerah,
     bool? diblokir,
   }) {
@@ -54,6 +59,7 @@ class Nasabah {
       nama: nama ?? this.nama,
       nomorTelpon: nomorTelpon ?? this.nomorTelpon,
       kartuKuning: kartuKuning ?? this.kartuKuning,
+      alasanKartuKuning: alasanKartuKuning ?? this.alasanKartuKuning,
       kartuMerah: kartuMerah ?? this.kartuMerah,
       diblokir: diblokir ?? this.diblokir,
       createdAt: createdAt,

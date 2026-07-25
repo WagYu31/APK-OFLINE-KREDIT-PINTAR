@@ -23,7 +23,7 @@ class DbHelper {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
@@ -42,6 +42,7 @@ class DbHelper {
             nama TEXT NOT NULL,
             nomorTelpon TEXT,
             kartuKuning INTEGER DEFAULT 0,
+            alasanKartuKuning TEXT,
             kartuMerah INTEGER DEFAULT 0,
             diblokir INTEGER DEFAULT 0,
             createdAt TEXT
@@ -127,6 +128,14 @@ class DbHelper {
           try {
             await db.execute(
               'ALTER TABLE settings ADD COLUMN biayaAdminPerKelipatan REAL DEFAULT 25000'
+            );
+          } catch (_) {}
+        }
+
+        if (oldVersion < 4) {
+          try {
+            await db.execute(
+              'ALTER TABLE nasabah ADD COLUMN alasanKartuKuning TEXT'
             );
           } catch (_) {}
         }

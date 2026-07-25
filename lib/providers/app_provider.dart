@@ -80,8 +80,13 @@ class AppProvider extends ChangeNotifier {
     return _db.getNasabah(id);
   }
 
-  Future<void> toggleKartuKuning(Nasabah nasabah) async {
+  Future<void> toggleKartuKuning(Nasabah nasabah, {String? alasan}) async {
     nasabah.kartuKuning = !nasabah.kartuKuning;
+    if (nasabah.kartuKuning) {
+      nasabah.alasanKartuKuning = alasan;
+    } else {
+      nasabah.alasanKartuKuning = null;
+    }
     await _db.updateNasabah(nasabah);
     await refreshData();
   }

@@ -187,6 +187,219 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
     teleponController.dispose();
   }
 
+  Future<void> _showKartuKuningDialog(AppProvider provider) async {
+    if (_nasabah.kartuKuning) {
+      // Cabut Kartu Kuning
+      final confirmed = await ConfirmDialog.show(
+        context,
+        title: 'Cabut Kartu Kuning?',
+        message: 'Cabut Kartu Kuning dari ${_nasabah.nama}?',
+        icon: Icons.warning_rounded,
+        confirmColor: const Color(0xFFFFB300),
+      );
+      if (confirmed) {
+        await provider.toggleKartuKuning(_nasabah);
+        await _loadTransaksi();
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+
+    // Beri Kartu Kuning dengan Alasan
+    String selectedReason = 'Pelunasan kurang';
+    final customReasonController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFB300).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFFFB300),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Beri Kartu Kuning',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pilih alasan memberikan Kartu Kuning untuk ${_nasabah.nama}:',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  
+                  // Opsi 1: Pelunasan kurang
+                  _buildReasonTile(
+                    title: 'Pelunasan kurang',
+                    value: 'Pelunasan kurang',
+                    groupValue: selectedReason,
+                    onChanged: (val) => setDialogState(() => selectedReason = val!),
+                  ),
+                  
+                  // Opsi 2: Tidak tepat janji tanggal pelunasan
+                  _buildReasonTile(
+                    title: 'Tidak tepat janji tanggal pelunasan',
+                    value: 'Tidak tepat janji tanggal pelunasan',
+                    groupValue: selectedReason,
+                    onChanged: (val) => setDialogState(() => selectedReason = val!),
+                  ),
+
+                  // Opsi 3: Lainnya
+                  _buildReasonTile(
+                    title: 'Lainnya',
+                    value: 'Lainnya',
+                    groupValue: selectedReason,
+                    onChanged: (val) => setDialogState(() => selectedReason = val!),
+                  ),
+
+                  if (selectedReason == 'Lainnya') ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: customReasonController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Tuliskan alasan lainnya...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.3),
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFFFB300)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: Text(
+                  'Batal',
+                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  String finalReason = selectedReason;
+                  if (selectedReason == 'Lainnya') {
+                    final text = customReasonController.text.trim();
+                    finalReason = text.isNotEmpty ? text : 'Lainnya';
+                  }
+                  Navigator.pop(ctx, finalReason);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFB300),
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    customReasonController.dispose();
+
+    if (result != null) {
+      await provider.toggleKartuKuning(_nasabah, alasan: result);
+      await _loadTransaksi();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kartu Kuning diberikan: $result ⚠️'),
+            backgroundColor: const Color(0xFFFFB300),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        setState(() {});
+      }
+    }
+  }
+
+  Widget _buildReasonTile({
+    required String title,
+    required String value,
+    required String groupValue,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final isSelected = value == groupValue;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFFFFB300).withOpacity(0.12)
+            : Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected
+              ? const Color(0xFFFFB300)
+              : Colors.transparent,
+        ),
+      ),
+      child: RadioListTile<String>(
+        value: value,
+        groupValue: groupValue,
+        onChanged: onChanged,
+        activeColor: const Color(0xFFFFB300),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        dense: true,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AppProvider>(context);
@@ -320,22 +533,7 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                           isKuning: _nasabah.kartuKuning,
                           isMerah: _nasabah.kartuMerah,
                           isDiblokir: _nasabah.diblokir,
-                          onKuningTap: () async {
-                            final action = _nasabah.kartuKuning
-                                ? 'Cabut Kartu Kuning'
-                                : 'Beri Kartu Kuning';
-                            final confirmed = await ConfirmDialog.show(
-                              context,
-                              title: '$action?',
-                              message: '$action untuk ${_nasabah.nama}?',
-                              icon: Icons.warning_rounded,
-                              confirmColor: const Color(0xFFFFB300),
-                            );
-                            if (confirmed) {
-                              await provider.toggleKartuKuning(_nasabah);
-                              await _loadTransaksi();
-                            }
-                          },
+                          onKuningTap: () => _showKartuKuningDialog(provider),
                           onMerahTap: () async {
                             final action = _nasabah.kartuMerah
                                 ? 'Cabut Kartu Merah'
@@ -363,6 +561,35 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                         color: Colors.white.withOpacity(0.5),
                       ),
                     ),
+
+                    if (_nasabah.kartuKuning && _nasabah.alasanKartuKuning != null) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB300).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFFB300).withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Color(0xFFFFB300), size: 16),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Kartu Kuning: ${_nasabah.alasanKartuKuning}',
+                                style: const TextStyle(
+                                  color: Color(0xFFFFB300),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     if (_nasabah.diblokir) ...[
                       const SizedBox(height: 12),
