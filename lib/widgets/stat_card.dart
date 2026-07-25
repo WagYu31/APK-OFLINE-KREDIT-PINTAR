@@ -23,19 +23,19 @@ class StatCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withOpacity(0.15),
-              color.withOpacity(0.05),
+              color.withOpacity(0.20),
+              color.withOpacity(0.06),
             ],
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.2),
+            color: color.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -47,40 +47,40 @@ class StatCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withOpacity(0.25),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: color, size: 18),
+                  child: Icon(icon, color: color, size: 16),
                 ),
                 if (onTap != null)
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    size: 12,
-                    color: Colors.white.withOpacity(0.3),
+                    size: 11,
+                    color: Colors.white.withOpacity(0.4),
                   ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               title,
               style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withOpacity(0.6),
+                fontSize: 10,
+                color: Colors.white.withOpacity(0.7),
                 fontWeight: FontWeight.w500,
               ),
               maxLines: 2,
@@ -91,8 +91,8 @@ class StatCard extends StatelessWidget {
               Text(
                 subtitle!,
                 style: TextStyle(
-                  fontSize: 10,
-                  color: color.withOpacity(0.8),
+                  fontSize: 9,
+                  color: color.withOpacity(0.9),
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,

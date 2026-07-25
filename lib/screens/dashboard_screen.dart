@@ -248,7 +248,7 @@ class DashboardScreen extends StatelessWidget {
             title: 'Total Pinjaman',
             value: formatRupiah((stats['totalPinjaman'] ?? 0.0) as double),
             icon: Icons.account_balance_wallet,
-            color: Colors.white,
+            color: const Color(0xFFAB47BC),
             onTap: () => _showTransaksiAktifModal(context, provider),
           ),
         ),
