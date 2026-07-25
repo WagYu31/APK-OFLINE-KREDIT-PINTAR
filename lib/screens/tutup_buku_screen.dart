@@ -511,7 +511,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     );
   }
 
-  Future<void> _resetData(bool fullReset) async {
+  Future<void> _mulaiTahunBaru() async {
     final provider = Provider.of<AppProvider>(context, listen: false);
 
     final modalBaru =
@@ -519,31 +519,28 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
     final confirmed = await ConfirmDialog.show(
       context,
-      title: fullReset ? 'Reset Semua Data?' : 'Mulai Tahun Baru?',
-      message: fullReset
-          ? 'SEMUA data nasabah & transaksi akan dihapus. Aksi ini tidak bisa dibatalkan!'
-          : 'Transaksi akan direset. Kartu kuning akan dicabut. Data nasabah tetap ada.',
-      icon: fullReset ? Icons.delete_forever : Icons.refresh,
-      confirmColor: fullReset
-          ? const Color(0xFFE53935)
-          : const Color(0xFFD4AF37),
+      title: 'Mulai Tahun Baru?',
+      message:
+          'Transaksi akan direset untuk tahun baru. Kartu kuning akan dicabut. Data nasabah tetap aman & tersimpan.',
+      icon: Icons.refresh,
+      confirmColor: const Color(0xFFD4AF37),
     );
 
     if (!confirmed) return;
 
-    await provider.resetData(fullReset: fullReset);
+    await provider.resetData(fullReset: false);
 
-    // Save new settings
+    final nextYear = provider.settings.tahunAktif + 1;
     final newSettings = Settings(
       modalAwal: modalBaru > 0 ? modalBaru : provider.settings.modalAwal,
-      tahunAktif: DateTime.now().year,
+      tahunAktif: nextYear,
     );
     await provider.saveSettings(newSettings);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Data berhasil direset! ✅'),
+          content: Text('Tahun baru $nextYear berhasil dimulai! 🎆'),
           backgroundColor: const Color(0xFF4CAF50),
           behavior: SnackBarBehavior.floating,
           shape:
@@ -552,6 +549,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       );
       setState(() {
         _tutupBukuData = null;
+        _modalBaruController.clear();
       });
     }
   }
@@ -777,55 +775,29 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
                 const SizedBox(height: 20),
 
-                // Reset options
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _resetData(false),
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: const Text(
-                            'Mulai\nTahun Baru',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFD4AF37),
-                            side: const BorderSide(
-                                color: Color(0xFFD4AF37)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
+                // Mulai Tahun Baru Option
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: _mulaiTahunBaru,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text(
+                      'Mulai Tahun Baru Sekarang',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _resetData(true),
-                          icon: const Icon(Icons.delete_forever, size: 18),
-                          label: const Text(
-                            'Reset\nSemua Data',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53935),
-                            side: const BorderSide(
-                                color: Color(0xFFE53935)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
+                      elevation: 0,
                     ),
-                  ],
+                  ),
                 ),
               ],
 
