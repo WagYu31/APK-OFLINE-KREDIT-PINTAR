@@ -241,40 +241,35 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStatsGrid(
       Map<String, dynamic> stats, AppProvider provider, BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 14,
-      crossAxisSpacing: 14,
-      childAspectRatio: 1.05,
+    return Row(
       children: [
-        StatCard(
-          title: 'Total Pinjaman',
-          value: formatRupiah((stats['totalPinjaman'] ?? 0.0) as double),
-          icon: Icons.account_balance_wallet,
-          color: Colors.white,
-          onTap: () => _showTransaksiAktifModal(context, provider),
+        Expanded(
+          child: StatCard(
+            title: 'Total Pinjaman',
+            value: formatRupiah((stats['totalPinjaman'] ?? 0.0) as double),
+            icon: Icons.account_balance_wallet,
+            color: Colors.white,
+            onTap: () => _showTransaksiAktifModal(context, provider),
+          ),
         ),
-        StatCard(
-          title: 'Total Pengembalian',
-          value: formatRupiah((stats['totalPengembalian'] ?? 0.0) as double),
-          icon: Icons.payments_outlined,
-          color: const Color(0xFF66BB6A),
+        const SizedBox(width: 8),
+        Expanded(
+          child: StatCard(
+            title: 'Total Pengembalian',
+            value: formatRupiah((stats['totalPengembalian'] ?? 0.0) as double),
+            icon: Icons.payments_outlined,
+            color: const Color(0xFF66BB6A),
+          ),
         ),
-        StatCard(
-          title: 'Total Nasabah',
-          value: '${stats['totalNasabah'] ?? 0}',
-          icon: Icons.people_outline,
-          color: const Color(0xFFAB47BC),
-        ),
-        StatCard(
-          title: 'Transaksi Aktif',
-          value: '${stats['totalTransaksiAktif'] ?? 0}',
-          icon: Icons.receipt_long,
-          color: const Color(0xFF42A5F5),
-          subtitle: 'Ketuk untuk detail',
-          onTap: () => _showTransaksiAktifModal(context, provider),
+        const SizedBox(width: 8),
+        Expanded(
+          child: StatCard(
+            title: 'Transaksi Aktif',
+            value: '${stats['totalTransaksiAktif'] ?? 0}',
+            icon: Icons.receipt_long,
+            color: const Color(0xFF42A5F5),
+            onTap: () => _showTransaksiAktifModal(context, provider),
+          ),
         ),
       ],
     );
