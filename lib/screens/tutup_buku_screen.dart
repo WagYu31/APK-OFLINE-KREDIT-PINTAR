@@ -710,26 +710,55 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
                 const SizedBox(height: 20),
 
-                // Download/Print PDF
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: _exportPdf,
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: const Text(
-                      'Download / Print PDF',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF42A5F5),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                // Download/Print PDF & Selesai Row
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: _exportPdf,
+                          icon: const Icon(Icons.picture_as_pdf, size: 18),
+                          label: const Text(
+                            'Download PDF',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF42A5F5),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
                       ),
-                      elevation: 0,
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 4,
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () => provider.switchTab(0),
+                          icon: const Icon(Icons.check_circle, size: 18),
+                          label: const Text(
+                            'Selesai',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 28),
@@ -1302,29 +1331,171 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                           ],
                         ),
                       ),
+                      // Nasabah Data Breakdown List
                       const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _exportPdfForData(d);
-                          },
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: Text(
-                            'Download / Print PDF ${d['tahun']}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF42A5F5),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            elevation: 0,
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '📋 Data Nasabah & Transaksi',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      ...provider.allNasabah.map((n) {
+                        final nTx = provider.allTransaksi
+                            .where((t) => t.nasabahId == n.id)
+                            .toList();
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.06),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    n.nama,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    n.nomorTelpon,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (n.kartuKuning || n.kartuMerah || n.diblokir) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (n.diblokir)
+                                      const Text('[DIBLOKIR] ', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                    if (n.kartuMerah)
+                                      const Text('[KARTU MERAH] ', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                    if (n.kartuKuning)
+                                      Text('[KARTU KUNING: ${n.alasanKartuKuning ?? "-"}] ', style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              if (nTx.isEmpty)
+                                Text(
+                                  'Belum ada transaksi',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.3),
+                                    fontSize: 12,
+                                  ),
+                                )
+                              else
+                                ...nTx.map((t) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 3),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Pinjaman: ${formatRupiah(t.nominalPinjaman)}',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Text(
+                                          t.status.toUpperCase(),
+                                          style: TextStyle(
+                                            color: t.status == 'lunas'
+                                                ? const Color(0xFF4CAF50)
+                                                : const Color(0xFFFF9800),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: SizedBox(
+                              height: 52,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _exportPdfForData(d);
+                                },
+                                icon: const Icon(Icons.picture_as_pdf, size: 18),
+                                label: Text(
+                                  'Download PDF ${d['tahun']}',
+                                  style: const TextStyle(
+                                      fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF42A5F5),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 4,
+                            child: SizedBox(
+                              height: 52,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  provider.switchTab(0);
+                                },
+                                icon: const Icon(Icons.check_circle, size: 18),
+                                label: const Text(
+                                  'Selesai',
+                                  style: TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4CAF50),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
