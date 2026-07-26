@@ -78,20 +78,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<GroupedNasabahTransaksi> _groupTransaksiByNasabah(
       List<Transaksi> rawList, AppProvider provider) {
-    final Map<int, List<Transaksi>> map = {};
-    for (var t in rawList) {
-      map.putIfAbsent(t.nasabahId, () => []).add(t);
-    }
+    final Set<int> nasabahIds = rawList.map((t) => t.nasabahId).toSet();
 
     final List<GroupedNasabahTransaksi> result = [];
-    map.forEach((nasabahId, list) {
+    for (var nasabahId in nasabahIds) {
       final nasabah = provider.getNasabahFromList(nasabahId);
+      // Fetch ALL active (unpaid) transactions for this nasabah from provider.allTransaksi
+      final allActiveForNasabah = provider.allTransaksi
+          .where((t) => t.nasabahId == nasabahId && t.status != 'lunas')
+          .toList();
+
+      final txList = allActiveForNasabah.isNotEmpty
+          ? allActiveForNasabah
+          : rawList.where((t) => t.nasabahId == nasabahId).toList();
+
       result.add(GroupedNasabahTransaksi(
         nasabahId: nasabahId,
         nasabah: nasabah,
-        transaksiList: list,
+        transaksiList: txList,
       ));
-    });
+    }
     return result;
   }
 
