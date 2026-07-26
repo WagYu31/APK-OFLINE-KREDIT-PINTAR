@@ -111,6 +111,16 @@ class AppProvider extends ChangeNotifier {
     await refreshData();
   }
 
+  Future<void> deleteNasabah(int id) async {
+    await _db.deleteNasabah(id);
+    await refreshData();
+  }
+
+  Future<void> deleteMultipleNasabah(List<int> ids) async {
+    await _db.deleteMultipleNasabah(ids);
+    await refreshData();
+  }
+
   // ==================== TRANSAKSI ====================
 
   Future<int> addTransaksi(Transaksi transaksi) async {

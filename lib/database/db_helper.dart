@@ -200,7 +200,16 @@ class DbHelper {
 
   Future<void> deleteNasabah(int id) async {
     final db = await database;
+    await db.delete('transaksi', where: 'nasabahId = ?', whereArgs: [id]);
     await db.delete('nasabah', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteMultipleNasabah(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await database;
+    final idList = ids.join(',');
+    await db.delete('transaksi', where: 'nasabahId IN ($idList)');
+    await db.delete('nasabah', where: 'id IN ($idList)');
   }
 
   // ==================== TRANSAKSI ====================
