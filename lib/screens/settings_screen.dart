@@ -110,9 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        if (widget.isFirstTime) {
-          Navigator.pop(context);
-        }
+        Navigator.pop(context);
       }
     } catch (e) {
       setState(() => _isSaving = false);
