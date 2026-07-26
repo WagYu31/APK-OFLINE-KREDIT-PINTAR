@@ -15,6 +15,7 @@ class AppProvider extends ChangeNotifier {
   Map<String, dynamic> _statistik = {};
   bool _isLoading = true;
   String _searchQuery = '';
+  int _activeTabIndex = 0;
 
   // Getters
   Settings get settings => _settings;
@@ -29,6 +30,12 @@ class AppProvider extends ChangeNotifier {
   Map<String, dynamic> get statistik => _statistik;
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
+  int get activeTabIndex => _activeTabIndex;
+
+  void switchTab(int index) {
+    _activeTabIndex = index;
+    notifyListeners();
+  }
 
   Future<void> init() async {
     _isLoading = true;

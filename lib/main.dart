@@ -288,7 +288,7 @@ class _MainNavigationState extends State<MainNavigation> {
             ],
           ),
           body: IndexedStack(
-            index: _currentIndex,
+            index: provider.activeTabIndex,
             children: _screens,
           ),
           bottomNavigationBar: Container(
@@ -309,10 +309,10 @@ class _MainNavigationState extends State<MainNavigation> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
-                    _buildNavItem(1, Icons.add_circle_outline, 'Transaksi'),
-                    _buildNavItem(2, Icons.people_outline, 'Nasabah'),
-                    _buildNavItem(3, Icons.book_outlined, 'Tutup Buku'),
+                    _buildNavItem(provider, 0, Icons.dashboard_rounded, 'Dashboard'),
+                    _buildNavItem(provider, 1, Icons.add_circle_outline, 'Transaksi'),
+                    _buildNavItem(provider, 2, Icons.people_outline, 'Nasabah'),
+                    _buildNavItem(provider, 3, Icons.book_outlined, 'Tutup Buku'),
                   ],
                 ),
               ),
@@ -323,10 +323,10 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isActive = _currentIndex == index;
+  Widget _buildNavItem(AppProvider provider, int index, IconData icon, String label) {
+    final isActive = provider.activeTabIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => provider.switchTab(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

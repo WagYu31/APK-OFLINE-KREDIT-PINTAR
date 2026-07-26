@@ -538,6 +538,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     await provider.saveSettings(newSettings);
 
     if (mounted) {
+      provider.switchTab(0);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Tahun baru $nextYear berhasil dimulai! 🎆'),

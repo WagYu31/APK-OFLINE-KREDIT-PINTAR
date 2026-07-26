@@ -101,6 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _isSaving = false);
 
       if (mounted) {
+        provider.switchTab(0);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Pengaturan disimpan! ✅'),
