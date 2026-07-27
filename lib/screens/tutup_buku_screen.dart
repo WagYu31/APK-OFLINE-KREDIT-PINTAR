@@ -442,7 +442,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                                             child: pw.Text('Janji Bayar Berikutnya', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold))),
                                       ],
                                     ),
-                                    ...t.riwayatPembayaran.asMap().entries.map((pEntry) {
+                                    ...t.riwayatPembayaran.asMap().entries.toList().reversed.map((pEntry) {
                                       final pIdx = pEntry.key + 1;
                                       final p = pEntry.value;
                                       return pw.TableRow(

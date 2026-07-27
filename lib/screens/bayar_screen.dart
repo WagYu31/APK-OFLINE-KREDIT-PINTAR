@@ -211,7 +211,12 @@ class _BayarScreenState extends State<BayarScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ...widget.transaksi.riwayatPembayaran.asMap().entries.map((e) {
+              ...widget.transaksi.riwayatPembayaran
+                  .asMap()
+                  .entries
+                  .toList()
+                  .reversed
+                  .map((e) {
                 final idx = e.key + 1;
                 final p = e.value;
                 return Container(
