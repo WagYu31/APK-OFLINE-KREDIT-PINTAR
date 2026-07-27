@@ -758,6 +758,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
               const Divider(height: 1, color: Colors.white12),
+              if (item.transaksiList.length > 1) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BayarScreen(
+                              transaksi: item.transaksiList.first,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.payments, size: 20),
+                      label: Text(
+                        '💳 Bayar Gabungan Sekaligus (${formatRupiah(item.totalSisaHutang)})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(20),

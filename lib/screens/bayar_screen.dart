@@ -133,6 +133,12 @@ class _BayarScreenState extends State<BayarScreen> {
     final provider = Provider.of<AppProvider>(context);
     final nama = provider.getNasabahNama(widget.transaksi.nasabahId);
 
+    final allActiveForNasabah = provider.allTransaksi
+        .where((t) => t.nasabahId == widget.transaksi.nasabahId && t.status != 'lunas')
+        .toList();
+    final totalSisaHutangNasabah = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.sisaHutang);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: AppBar(
@@ -146,6 +152,51 @@ class _BayarScreenState extends State<BayarScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Multi-loan Info Banner
+            if (allActiveForNasabah.length > 1) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF42A5F5).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF42A5F5).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFF42A5F5)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pembayaran Gabungan (${allActiveForNasabah.length} Pinjaman Aktif)',
+                            style: const TextStyle(
+                              color: Color(0xFF42A5F5),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Total Sisa Hutang: ${formatRupiah(totalSisaHutangNasabah)}. Kelebihan pembayaran akan otomatis melunasi pinjaman ke-1 & memotong pinjaman ke-2!',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Info Transaksi
             Container(
               padding: const EdgeInsets.all(20),
