@@ -251,19 +251,26 @@ class DbHelper {
   Future<List<Transaksi>> getTransaksiJatuhTempo() async {
     final all = await getTransaksiAktif();
     final now = DateTime.now();
-    final batas = now.add(const Duration(days: 3));
+    final today = DateTime(now.year, now.month, now.day);
+    final batas = today.add(const Duration(days: 3));
     return all.where((t) {
-      final due = DateTime.parse(t.tanggalJatuhTempo);
-      return due.isBefore(batas) || due.isAtSameMomentAs(batas);
+      final dueRaw = DateTime.parse(t.tanggalJatuhTempo);
+      final due = DateTime(dueRaw.year, dueRaw.month, dueRaw.day);
+      final isUpcoming = (due.isAfter(today) || due.isAtSameMomentAs(today)) &&
+          (due.isBefore(batas) || due.isAtSameMomentAs(batas));
+      return isUpcoming && t.status != 'sebagian';
     }).toList();
   }
 
   Future<List<Transaksi>> getTransaksiPunyaHutang() async {
-    final db = await database;
-    final maps = await db.query('transaksi',
-        where: "status = 'sebagian'",
-        orderBy: 'tanggalJatuhTempo ASC');
-    return maps.map((m) => Transaksi.fromMap(m)).toList();
+    final all = await getTransaksiAktif();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return all.where((t) {
+      final dueRaw = DateTime.parse(t.tanggalJatuhTempo);
+      final due = DateTime(dueRaw.year, dueRaw.month, dueRaw.day);
+      return due.isBefore(today) || t.status == 'sebagian';
+    }).toList();
   }
 
   // ==================== STATISTIK ====================
