@@ -10,6 +10,7 @@ import '../models/transaksi.dart';
 import '../widgets/card_badge.dart';
 import '../widgets/confirm_dialog.dart';
 import 'bayar_screen.dart';
+import 'pdf_preview_screen.dart';
 
 class NasabahDetailScreen extends StatefulWidget {
   final Nasabah nasabah;
@@ -354,10 +355,19 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Rekapan_${_nasabah.nama.replaceAll(' ', '_')}.pdf',
-    );
+    final bytes = await pdf.save();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Laporan ${_nasabah.nama}',
+            pdfBytes: bytes,
+            fileName: 'Rekapan_${_nasabah.nama.replaceAll(' ', '_')}.pdf',
+          ),
+        ),
+      );
+    }
   }
   Future<void> _showEditDialog(AppProvider provider) async {
     final namaController = TextEditingController(text: _nasabah.nama);

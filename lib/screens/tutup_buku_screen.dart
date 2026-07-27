@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
 import '../widgets/confirm_dialog.dart';
+import 'pdf_preview_screen.dart';
 
 class TutupBukuScreen extends StatefulWidget {
   const TutupBukuScreen({super.key});
@@ -490,10 +491,19 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Tutup_Buku_${data['tahun']}.pdf',
-    );
+    final bytes = await pdf.save();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Laporan Tutup Buku ${data['tahun']}',
+            pdfBytes: bytes,
+            fileName: 'Tutup_Buku_${data['tahun']}.pdf',
+          ),
+        ),
+      );
+    }
   }
 
   pw.Widget _pdfRow(String label, String value) {
@@ -1179,10 +1189,19 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Tutup_Buku_${data['tahun']}.pdf',
-    );
+    final bytes = await pdf.save();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Laporan Tutup Buku ${data['tahun']}',
+            pdfBytes: bytes,
+            fileName: 'Tutup_Buku_${data['tahun']}.pdf',
+          ),
+        ),
+      );
+    }
   }
 
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
