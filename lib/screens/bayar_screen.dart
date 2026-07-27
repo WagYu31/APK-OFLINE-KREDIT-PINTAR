@@ -70,7 +70,14 @@ class _BayarScreenState extends State<BayarScreen> {
       return;
     }
 
-    final sisaSetelahBayar = widget.transaksi.sisaHutang - nominal;
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    final allActiveForNasabah = provider.allTransaksi
+        .where((t) => t.nasabahId == widget.transaksi.nasabahId && t.status != 'lunas')
+        .toList();
+    final totalSisaHutangNasabah = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.sisaHutang);
+
+    final sisaSetelahBayar = totalSisaHutangNasabah - nominal;
     final isLunas = sisaSetelahBayar <= 0;
 
     String message = 'Proses pembayaran ${formatRupiah(nominal)}?';
@@ -95,8 +102,6 @@ class _BayarScreenState extends State<BayarScreen> {
     );
 
     if (!confirmed) return;
-
-    final provider = Provider.of<AppProvider>(context, listen: false);
 
     await provider.prosesPembayaran(
       transaksi: widget.transaksi,

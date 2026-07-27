@@ -660,10 +660,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         count > 1 ? 'Total Bayar' : 'Harus Bayar',
                         formatRupiah(item.totalHarusBayar)),
                     _buildInfoChip(
-                      isHutang
-                          ? (count > 1 ? 'Total Sisa' : 'Sisa')
+                      isHutang || item.totalSisaHutang < item.totalHarusBayar
+                          ? (count > 1 ? 'Total Sisa' : 'Sisa Hutang')
                           : 'Jatuh Tempo',
-                      isHutang
+                      isHutang || item.totalSisaHutang < item.totalHarusBayar
                           ? formatRupiah(item.totalSisaHutang)
                           : formatTanggal(item.earliestJatuhTempo),
                     ),

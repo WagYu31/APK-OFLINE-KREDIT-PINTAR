@@ -138,30 +138,75 @@ class AppProvider extends ChangeNotifier {
     return transaksi.any((t) => t.status != 'lunas');
   }
 
-  /// Process a payment on a transaksi
+  /// Process a payment on a transaksi, automatically cascading any excess payment
+  /// to other active loans of the same nasabah.
   Future<void> prosesPembayaran({
     required Transaksi transaksi,
     required double nominal,
     required String tanggalBayar,
     String? tanggalJanjiBerikutnya,
   }) async {
-    final pembayaran = Pembayaran(
-      nominal: nominal,
-      tanggal: tanggalBayar,
-      tanggalJanjiBerikutnya: tanggalJanjiBerikutnya,
-    );
+    double remainingNominal = nominal;
 
-    transaksi.riwayatPembayaran.add(pembayaran);
-    transaksi.sisaHutang = transaksi.totalHarusBayar - transaksi.totalDibayar;
+    // Fetch all active transactions for this nasabah from DB
+    final allNasabahTx = await _db.getTransaksiByNasabah(transaksi.nasabahId);
+    final activeTxList = allNasabahTx.where((t) => t.status != 'lunas').toList();
 
-    if (transaksi.sisaHutang <= 0) {
-      transaksi.status = 'lunas';
-      transaksi.sisaHutang = 0;
-    } else {
-      transaksi.status = 'sebagian';
+    // Ensure target transaksi is first in line
+    activeTxList.sort((a, b) {
+      if (a.id == transaksi.id) return -1;
+      if (b.id == transaksi.id) return 1;
+      return a.tanggalJatuhTempo.compareTo(b.tanggalJatuhTempo);
+    });
+
+    for (var currentTx in activeTxList) {
+      if (remainingNominal <= 0) break;
+
+      final currentSisa = currentTx.sisaHutang;
+      final paymentForThisTx = (remainingNominal > currentSisa && currentSisa > 0)
+          ? currentSisa
+          : remainingNominal;
+
+      final pembayaran = Pembayaran(
+        nominal: paymentForThisTx,
+        tanggal: tanggalBayar,
+        tanggalJanjiBerikutnya: paymentForThisTx < currentSisa ? tanggalJanjiBerikutnya : null,
+      );
+
+      currentTx.riwayatPembayaran.add(pembayaran);
+      final newSisa = currentTx.totalHarusBayar - currentTx.totalDibayar;
+
+      if (newSisa <= 0) {
+        currentTx.status = 'lunas';
+        currentTx.sisaHutang = 0;
+      } else {
+        currentTx.status = 'sebagian';
+        currentTx.sisaHutang = newSisa;
+      }
+
+      await _db.updateTransaksi(currentTx);
+      remainingNominal -= paymentForThisTx;
     }
 
-    await _db.updateTransaksi(transaksi);
+    // If there is still excess remainingNominal even after all active loans are paid lunas,
+    // attach the remainder to the target transaction as an overpayment record.
+    if (remainingNominal > 0 && activeTxList.isNotEmpty) {
+      final targetTx = activeTxList.firstWhere(
+        (t) => t.id == transaksi.id,
+        orElse: () => activeTxList.first,
+      );
+      final lastP = targetTx.riwayatPembayaran.lastOrNull;
+      if (lastP != null) {
+        targetTx.riwayatPembayaran.removeLast();
+        targetTx.riwayatPembayaran.add(Pembayaran(
+          nominal: lastP.nominal + remainingNominal,
+          tanggal: lastP.tanggal,
+          tanggalJanjiBerikutnya: lastP.tanggalJanjiBerikutnya,
+        ));
+        await _db.updateTransaksi(targetTx);
+      }
+    }
+
     await refreshData();
   }
 
