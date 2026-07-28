@@ -325,6 +325,11 @@ class DbHelper {
     return db.query('tutup_buku', orderBy: 'tahun DESC');
   }
 
+  Future<void> deleteTutupBuku(int tahun) async {
+    final db = await database;
+    await db.delete('tutup_buku', where: 'tahun = ?', whereArgs: [tahun]);
+  }
+
   Future<void> resetAllData() async {
     final db = await database;
     await db.delete('transaksi');

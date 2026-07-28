@@ -270,6 +270,11 @@ class AppProvider extends ChangeNotifier {
     return _db.getAllTutupBuku();
   }
 
+  Future<void> deleteTutupBuku(int tahun) async {
+    await _db.deleteTutupBuku(tahun);
+    await refreshData();
+  }
+
   String getNasabahNama(int nasabahId) {
     final nasabah = _allNasabah.firstWhere(
       (n) => n.id == nasabahId,

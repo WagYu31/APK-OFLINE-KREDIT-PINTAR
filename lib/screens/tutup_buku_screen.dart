@@ -1527,6 +1527,125 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     );
   }
 
+  void _showLongPressRiwayatTutupBuku(
+      BuildContext context, Map<String, dynamic> d, AppProvider provider) {
+    final tahun = d['tahun'];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A2E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.book, color: Color(0xFFD4AF37), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tutup Buku Tahun $tahun',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Keuntungan: ${formatRupiah((d['totalKeuntungan'] as num).toDouble())}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(color: Colors.white12),
+              ListTile(
+                leading: const Icon(Icons.description_outlined, color: Color(0xFFD4AF37)),
+                title: const Text(
+                  'Lihat Detail & Export PDF',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showDetailRiwayatTutupBuku(context, d);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Color(0xFFE53935)),
+                title: Text(
+                  'Hapus Rekap Tahun $tahun',
+                  style: const TextStyle(
+                    color: Color(0xFFE53935),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirmed = await ConfirmDialog.show(
+                    context,
+                    title: 'Hapus Rekap Tahun $tahun?',
+                    message:
+                        'Data riwayat rekapitulasi tutup buku tahun $tahun akan dihapus secara permanen!',
+                    icon: Icons.delete_forever,
+                    confirmColor: const Color(0xFFE53935),
+                  );
+
+                  if (confirmed) {
+                    await provider.deleteTutupBuku(tahun);
+                    if (mounted) {
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Riwayat Tutup Buku Tahun $tahun berhasil dihapus! ✅'),
+                          backgroundColor: const Color(0xFF4CAF50),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   return Column(
     children: snapshot.data!.map((d) {
       return Container(
@@ -1543,6 +1662,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => _showDetailRiwayatTutupBuku(context, d),
+            onLongPress: () =>
+                _showLongPressRiwayatTutupBuku(context, d, provider),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
