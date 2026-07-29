@@ -239,6 +239,16 @@ class AppProvider extends ChangeNotifier {
       return created.year == tahun;
     }).length;
 
+    // Determine start date of period (Tanggal Buka Buku)
+    String tanggalBukaBuku = '$tahun-01-01';
+    if (allTransaksi.isNotEmpty) {
+      final sortedTx = List<Transaksi>.from(allTransaksi)
+        ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+      if (sortedTx.first.tanggalPinjam.isNotEmpty) {
+        tanggalBukaBuku = sortedTx.first.tanggalPinjam;
+      }
+    }
+
     final data = {
       'tahun': tahun,
       'modalAwal': _settings.modalAwal,
@@ -250,6 +260,8 @@ class AppProvider extends ChangeNotifier {
       'totalNasabahBaru': nasabahBaru,
       'totalKartuKuning': stats['totalKartuKuning'] ?? 0,
       'totalKartuMerah': stats['totalKartuMerah'] ?? 0,
+      'tanggalBukaBuku': tanggalBukaBuku,
+      'tanggalTutupBuku': DateTime.now().toIso8601String().split('T')[0],
       'createdAt': DateTime.now().toIso8601String(),
     };
 

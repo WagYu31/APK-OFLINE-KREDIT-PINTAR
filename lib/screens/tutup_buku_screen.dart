@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
+import '../models/transaksi.dart';
 import '../widgets/confirm_dialog.dart';
 import 'pdf_preview_screen.dart';
 
@@ -892,6 +893,29 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       }
     }
 
+    // Determine Period Start Date (Tanggal Buka Buku) & End Date (Tanggal Tutup Buku)
+    String tglBuka = data['tanggalBukaBuku']?.toString() ?? '';
+    if (tglBuka.isEmpty) {
+      if (allTransaksi.isNotEmpty) {
+        final sorted = List<Transaksi>.from(allTransaksi)
+          ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+        tglBuka = sorted.first.tanggalPinjam;
+      } else {
+        tglBuka = '${data['tahun']}-01-01';
+      }
+    }
+
+    String tglTutup = data['tanggalTutupBuku']?.toString() ?? '';
+    if (tglTutup.isEmpty) {
+      final created = data['createdAt']?.toString() ?? '';
+      tglTutup = created.isNotEmpty
+          ? created.split('T')[0]
+          : DateTime.now().toIso8601String().split('T')[0];
+    }
+
+    final periodeStr =
+        'PERIODE: ${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -931,9 +955,27 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             ),
             pw.SizedBox(height: 4),
             pw.Center(
+              child: pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue100,
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Text(
+                  periodeStr,
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue900,
+                  ),
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
               child: pw.Text(
                 'Sukron08 - Rekapan Data Keuangan & Riwayat Nasabah',
-                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
               ),
             ),
             pw.SizedBox(height: 10),
@@ -956,6 +998,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                     style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                   ),
                   pw.SizedBox(height: 8),
+                  _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
                   _pdfRow('Total Keuntungan', formatRupiah((data['totalKeuntungan'] as num).toDouble())),
                   _pdfRow('Total Pinjaman', formatRupiah((data['totalPinjaman'] as num).toDouble())),
@@ -1205,6 +1248,30 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
   }
 
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
+    String tglBuka = d['tanggalBukaBuku']?.toString() ?? '';
+    if (tglBuka.isEmpty) {
+      tglBuka = '${d['tahun']}-01-01';
+    }
+    String tglTutup = d['tanggalTutupBuku']?.toString() ?? '';
+    if (tglTutup.isEmpty) {
+      final created = d['createdAt']?.toString() ?? '';
+      tglTutup = created.isNotEmpty
+          ? created.split('T')[0]
+          : DateTime.now().toIso8601String().split('T')[0];
+    }
+
+    String formatTgl(String iso) {
+      if (iso.isEmpty) return '-';
+      try {
+        final dt = DateTime.parse(iso);
+        return DateFormat('dd MMM yyyy', 'id_ID').format(dt);
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    final periodeStr = '${formatTgl(tglBuka)} s/d ${formatTgl(tglTutup)}';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1263,10 +1330,11 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                               ),
                             ),
                             Text(
-                              'Data riwayat rekapitulasi tahunan',
-                              style: TextStyle(
+                              'Periode: $periodeStr',
+                              style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.white.withOpacity(0.5),
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF42A5F5),
                               ),
                             ),
                           ],
@@ -1303,6 +1371,12 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         ),
                         child: Column(
                           children: [
+                            _buildRekapRow(
+                              '📅 Periode Rekap',
+                              periodeStr,
+                              color: const Color(0xFF42A5F5),
+                            ),
+                            const Divider(color: Colors.white12, height: 16),
                             _buildRekapRow(
                               '① Modal Awal',
                               formatRupiah((d['modalAwal'] as num).toDouble()),

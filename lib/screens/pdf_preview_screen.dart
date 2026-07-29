@@ -104,11 +104,14 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                 const Icon(Icons.pinch_outlined,
                     color: Color(0xFFD4AF37), size: 18),
                 const SizedBox(width: 8),
-                Text(
-                  'Gunakan 2 jari (pinch) atau tombol atas untuk Zoom In/Out',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    'Gunakan 2 jari (pinch) atau tombol atas untuk Zoom In/Out',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
