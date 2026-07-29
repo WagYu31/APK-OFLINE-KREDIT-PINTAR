@@ -23,7 +23,7 @@ class DbHelper {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
@@ -79,6 +79,8 @@ class DbHelper {
             totalNasabahBaru INTEGER,
             totalKartuKuning INTEGER,
             totalKartuMerah INTEGER,
+            tanggalBukaBuku TEXT,
+            tanggalTutupBuku TEXT,
             snapshotData TEXT,
             createdAt TEXT
           )
@@ -136,6 +138,19 @@ class DbHelper {
           try {
             await db.execute(
               'ALTER TABLE nasabah ADD COLUMN alasanKartuKuning TEXT'
+            );
+          } catch (_) {}
+        }
+
+        if (oldVersion < 5) {
+          try {
+            await db.execute(
+              'ALTER TABLE tutup_buku ADD COLUMN tanggalBukaBuku TEXT'
+            );
+          } catch (_) {}
+          try {
+            await db.execute(
+              'ALTER TABLE tutup_buku ADD COLUMN tanggalTutupBuku TEXT'
             );
           } catch (_) {}
         }
@@ -316,8 +331,20 @@ class DbHelper {
 
   Future<void> insertTutupBuku(Map<String, dynamic> data) async {
     final db = await database;
-    await db.insert('tutup_buku', data,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    try {
+      await db.insert('tutup_buku', data,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    } catch (e) {
+      // Auto-migrate missing columns dynamically if DB version upgrade didn't trigger
+      try {
+        await db.execute('ALTER TABLE tutup_buku ADD COLUMN tanggalBukaBuku TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE tutup_buku ADD COLUMN tanggalTutupBuku TEXT');
+      } catch (_) {}
+      await db.insert('tutup_buku', data,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAllTutupBuku() async {
