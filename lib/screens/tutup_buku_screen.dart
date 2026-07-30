@@ -1430,6 +1430,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                               '📅 Periode Rekap',
                               periodeStr,
                               color: const Color(0xFF42A5F5),
+                              valueFontSize: 11.5,
                             ),
                             const Divider(color: Colors.white12, height: 16),
                             _buildRekapRow(
@@ -1878,7 +1879,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     );
   }
 
-  Widget _buildRekapRow(String label, String value, {Color? color}) {
+  Widget _buildRekapRow(String label, String value,
+      {Color? color, double? valueFontSize}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -1888,15 +1890,20 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             label,
             style: TextStyle(
               color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
+              fontSize: 13,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color ?? Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: color ?? Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: valueFontSize ?? 14,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
