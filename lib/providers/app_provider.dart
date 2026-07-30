@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
 import '../models/nasabah.dart';
@@ -249,6 +250,13 @@ class AppProvider extends ChangeNotifier {
       }
     }
 
+    // Build JSON snapshot of all nasabah & transactions for permanent history
+    final snapshotObj = {
+      'nasabah': allNasabah.map((n) => n.toMap()).toList(),
+      'transaksi': allTransaksi.map((t) => t.toMap()).toList(),
+    };
+    final snapshotJson = jsonEncode(snapshotObj);
+
     final data = {
       'tahun': tahun,
       'modalAwal': _settings.modalAwal,
@@ -262,6 +270,7 @@ class AppProvider extends ChangeNotifier {
       'totalKartuMerah': stats['totalKartuMerah'] ?? 0,
       'tanggalBukaBuku': tanggalBukaBuku,
       'tanggalTutupBuku': DateTime.now().toIso8601String().split('T')[0],
+      'snapshotData': snapshotJson,
       'createdAt': DateTime.now().toIso8601String(),
     };
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
+import '../models/nasabah.dart';
 import '../models/transaksi.dart';
 import '../widgets/confirm_dialog.dart';
 import 'pdf_preview_screen.dart';
@@ -878,8 +880,31 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
   Future<void> _exportPdfForData(Map<String, dynamic> data) async {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    final allNasabah = provider.allNasabah;
-    final allTransaksi = provider.allTransaksi;
+
+    List<Nasabah> pdfNasabahList = [];
+    List<Transaksi> pdfTxList = [];
+
+    if (data['snapshotData'] != null &&
+        data['snapshotData'].toString().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data['snapshotData'].toString());
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['nasabah'] is List) {
+            pdfNasabahList = (decoded['nasabah'] as List)
+                .map((item) => Nasabah.fromMap(item as Map<String, dynamic>))
+                .toList();
+          }
+          if (decoded['transaksi'] is List) {
+            pdfTxList = (decoded['transaksi'] as List)
+                .map((item) => Transaksi.fromMap(item as Map<String, dynamic>))
+                .toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (pdfNasabahList.isEmpty) pdfNasabahList = provider.allNasabah;
+    if (pdfTxList.isEmpty) pdfTxList = provider.allTransaksi;
 
     final pdf = pw.Document();
 
@@ -896,8 +921,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     // Determine Period Start Date (Tanggal Buka Buku) & End Date (Tanggal Tutup Buku)
     String tglBuka = data['tanggalBukaBuku']?.toString() ?? '';
     if (tglBuka.isEmpty) {
-      if (allTransaksi.isNotEmpty) {
-        final sorted = List<Transaksi>.from(allTransaksi)
+      if (pdfTxList.isNotEmpty) {
+        final sorted = List<Transaksi>.from(pdfTxList)
           ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
         tglBuka = sorted.first.tanggalPinjam;
       } else {
@@ -1032,8 +1057,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             pw.SizedBox(height: 10),
 
             // Loop every Nasabah
-            ...allNasabah.map((nasabah) {
-              final txList = allTransaksi.where((t) => t.nasabahId == nasabah.id).toList();
+            ...pdfNasabahList.map((nasabah) {
+              final txList = pdfTxList.where((t) => t.nasabahId == nasabah.id).toList();
 
               return pw.Container(
                 margin: const pw.EdgeInsets.only(bottom: 14),
@@ -1248,6 +1273,36 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
   }
 
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+
+    List<Nasabah> snapshotNasabahList = [];
+    List<Transaksi> snapshotTxList = [];
+
+    if (d['snapshotData'] != null && d['snapshotData'].toString().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(d['snapshotData'].toString());
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['nasabah'] is List) {
+            snapshotNasabahList = (decoded['nasabah'] as List)
+                .map((item) => Nasabah.fromMap(item as Map<String, dynamic>))
+                .toList();
+          }
+          if (decoded['transaksi'] is List) {
+            snapshotTxList = (decoded['transaksi'] as List)
+                .map((item) => Transaksi.fromMap(item as Map<String, dynamic>))
+                .toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (snapshotNasabahList.isEmpty) {
+      snapshotNasabahList = provider.allNasabah;
+    }
+    if (snapshotTxList.isEmpty) {
+      snapshotTxList = provider.allTransaksi;
+    }
+
     String tglBuka = d['tanggalBukaBuku']?.toString() ?? '';
     if (tglBuka.isEmpty) {
       tglBuka = '${d['tahun']}-01-01';
@@ -1438,8 +1493,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ...provider.allNasabah.map((n) {
-                        final nTx = provider.allTransaksi
+                      ...snapshotNasabahList.map((n) {
+                        final nTx = snapshotTxList
                             .where((t) => t.nasabahId == n.id)
                             .toList();
 
