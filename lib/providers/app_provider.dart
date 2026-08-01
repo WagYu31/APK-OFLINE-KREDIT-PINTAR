@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import '../database/db_helper.dart';
 import '../models/nasabah.dart';
 import '../models/transaksi.dart';
@@ -296,6 +300,57 @@ class AppProvider extends ChangeNotifier {
       return _allNasabah.firstWhere((n) => n.id == nasabahId);
     } catch (_) {
       return null;
+    }
+  }
+
+  // ==================== BACKUP & RESTORE ====================
+
+  Future<String?> exportBackupFile() async {
+    try {
+      final data = await _db.exportBackupJson();
+      final jsonStr = jsonEncode(data);
+      final dir = await getTemporaryDirectory();
+      final nowStr =
+          DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final filePath = '${dir.path}/KreditPintar_Backup_$nowStr.json';
+      final file = File(filePath);
+      await file.writeAsString(jsonStr);
+
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: 'Backup Data Kredit Pintar ($nowStr)',
+        text: 'File Cadangan Data Kredit Pintar (Impor pada HP baru)',
+      );
+      return filePath;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> importBackupFromFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null ||
+          result.files.isEmpty ||
+          result.files.first.path == null) {
+        return false;
+      }
+
+      final file = File(result.files.first.path!);
+      final jsonStr = await file.readAsString();
+      final Map<String, dynamic> data = jsonDecode(jsonStr);
+
+      final success = await _db.importBackupJson(data);
+      if (success) {
+        await refreshData();
+      }
+      return success;
+    } catch (e) {
+      return false;
     }
   }
 }

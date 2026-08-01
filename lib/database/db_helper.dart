@@ -381,4 +381,74 @@ class DbHelper {
     // Reset kartu kuning saat buka buku baru
     await db.update('nasabah', {'kartuKuning': 0});
   }
+
+  // ==================== BACKUP & RESTORE ====================
+
+  Future<Map<String, dynamic>> exportBackupJson() async {
+    final db = await database;
+    final settingsMaps = await db.query('settings');
+    final nasabahMaps = await db.query('nasabah');
+    final transaksiMaps = await db.query('transaksi');
+    final tutupBukuMaps = await db.query('tutup_buku');
+
+    return {
+      'appName': 'KreditPintar',
+      'version': '1.0.0',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'settings': settingsMaps,
+      'nasabah': nasabahMaps,
+      'transaksi': transaksiMaps,
+      'tutup_buku': tutupBukuMaps,
+    };
+  }
+
+  Future<bool> importBackupJson(Map<String, dynamic> backupData) async {
+    final db = await database;
+    if (backupData['appName'] != 'KreditPintar') return false;
+
+    await db.transaction((txn) async {
+      await txn.delete('transaksi');
+      await txn.delete('nasabah');
+      await txn.delete('tutup_buku');
+      await txn.delete('settings');
+
+      if (backupData['settings'] is List) {
+        for (final item in backupData['settings']) {
+          if (item is Map<String, dynamic>) {
+            await txn.insert('settings', Map<String, dynamic>.from(item),
+                conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
+      }
+
+      if (backupData['nasabah'] is List) {
+        for (final item in backupData['nasabah']) {
+          if (item is Map<String, dynamic>) {
+            await txn.insert('nasabah', Map<String, dynamic>.from(item),
+                conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
+      }
+
+      if (backupData['transaksi'] is List) {
+        for (final item in backupData['transaksi']) {
+          if (item is Map<String, dynamic>) {
+            await txn.insert('transaksi', Map<String, dynamic>.from(item),
+                conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
+      }
+
+      if (backupData['tutup_buku'] is List) {
+        for (final item in backupData['tutup_buku']) {
+          if (item is Map<String, dynamic>) {
+            await txn.insert('tutup_buku', Map<String, dynamic>.from(item),
+                conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+        }
+      }
+    });
+
+    return true;
+  }
 }

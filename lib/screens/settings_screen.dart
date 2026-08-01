@@ -424,6 +424,153 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
 
+            const SizedBox(height: 24),
+
+            // Backup & Restore Section (Pindah Device / HP Baru)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: const Color(0xFFD4AF37).withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.phonelink_setup,
+                          color: Color(0xFFD4AF37), size: 22),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '📦 Cadangkan & Pindah HP',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pindahkan seluruh data transaksi & nasabah ke HP baru tanpa kehilangan data sedikitpun.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Button 1: Cadangkan Data (Ekspor)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final provider =
+                            Provider.of<AppProvider>(context, listen: false);
+                        final path = await provider.exportBackupFile();
+                        if (path != null && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                  'File Cadangan Berhasil Dibuat & Siap Bagikan! 📤'),
+                              backgroundColor: const Color(0xFF4CAF50),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.upload_file, size: 20),
+                      label: const Text(
+                        'Cadangkan Data (Ekspor File / WA)',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF42A5F5),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Button 2: Pulihkan Data (Impor)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final confirmed = await ConfirmDialog.show(
+                          context,
+                          title: 'Pulihkan Data?',
+                          message:
+                              'Seluruh data di aplikasi ini akan digantikan dengan data dari file cadangan yang Anda pilih.',
+                          icon: Icons.download_rounded,
+                          confirmColor: const Color(0xFF4CAF50),
+                        );
+                        if (!confirmed) return;
+
+                        final provider =
+                            Provider.of<AppProvider>(context, listen: false);
+                        final success = await provider.importBackupFromFile();
+                        if (context.mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Pemulihan Data Berhasil! Seluruh Data Siap Digunakan. 🎉'),
+                                backgroundColor: const Color(0xFF4CAF50),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Batal atau Format File Cadangan Tidak Valid.'),
+                                backgroundColor: const Color(0xFFE53935),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 20),
+                      label: const Text(
+                        'Pulihkan Data (Impor Dari File)',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF4CAF50),
+                        side: const BorderSide(
+                            color: Color(0xFF4CAF50), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 32),
 
             // Save Button
