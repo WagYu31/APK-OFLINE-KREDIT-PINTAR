@@ -941,6 +941,17 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     final periodeStr =
         'PERIODE: ${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}';
 
+    final double targetNominalPdf =
+        (data['targetKeuntungan'] as num?)?.toDouble() ??
+            provider.settings.targetKeuntungan;
+    final double totalKeuntunganPdf =
+        (data['totalKeuntungan'] as num?)?.toDouble() ?? 0.0;
+    final double targetPersenPdf = targetNominalPdf > 0
+        ? (totalKeuntunganPdf / targetNominalPdf) * 100
+        : 0.0;
+    final String targetPersenPdfStr =
+        '${targetPersenPdf.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -1024,8 +1035,10 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                   ),
                   pw.SizedBox(height: 8),
                   _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
+                  _pdfRow('Total Target Keuntungan', formatRupiah(targetNominalPdf)),
+                  _pdfRow('Target Tercapai (%)', targetPersenPdfStr),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
-                  _pdfRow('Total Keuntungan', formatRupiah((data['totalKeuntungan'] as num).toDouble())),
+                  _pdfRow('Total Keuntungan', formatRupiah(totalKeuntunganPdf)),
                   _pdfRow('Total Pinjaman', formatRupiah((data['totalPinjaman'] as num).toDouble())),
                   _pdfRow('Total Pengembalian', formatRupiah((data['totalPengembalian'] as num).toDouble())),
                   pw.SizedBox(height: 6),
@@ -1327,6 +1340,17 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
     final periodeStr = '${formatTgl(tglBuka)} s/d ${formatTgl(tglTutup)}';
 
+    final double targetNominalModal =
+        (d['targetKeuntungan'] as num?)?.toDouble() ??
+            provider.settings.targetKeuntungan;
+    final double totalKeuntunganModal =
+        (d['totalKeuntungan'] as num?)?.toDouble() ?? 0.0;
+    final double targetPersenModal = targetNominalModal > 0
+        ? (totalKeuntunganModal / targetNominalModal) * 100
+        : 0.0;
+    final String targetPersenModalStr =
+        '${targetPersenModal.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1431,6 +1455,15 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                               periodeStr,
                               color: const Color(0xFF42A5F5),
                               valueFontSize: 11.5,
+                            ),
+                            _buildRekapRow(
+                              '🎯 Total Target Keuntungan',
+                              formatRupiah(targetNominalModal),
+                            ),
+                            _buildRekapRow(
+                              '📈 Target Tercapai (%)',
+                              targetPersenModalStr,
+                              color: const Color(0xFF4CAF50),
                             ),
                             const Divider(color: Colors.white12, height: 16),
                             _buildRekapRow(

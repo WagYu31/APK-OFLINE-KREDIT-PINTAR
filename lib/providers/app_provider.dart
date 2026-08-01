@@ -260,6 +260,7 @@ class AppProvider extends ChangeNotifier {
     final data = {
       'tahun': tahun,
       'modalAwal': _settings.modalAwal,
+      'targetKeuntungan': _settings.targetKeuntungan,
       'totalKeuntungan': stats['totalKeuntungan'] ?? 0.0,
       'totalPinjaman': stats['totalPinjaman'] ?? 0.0,
       'totalPengembalian': stats['totalPengembalian'] ?? 0.0,

@@ -23,7 +23,7 @@ class DbHelper {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
@@ -71,6 +71,7 @@ class DbHelper {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tahun INTEGER UNIQUE,
             modalAwal REAL,
+            targetKeuntungan REAL,
             totalKeuntungan REAL,
             totalPinjaman REAL,
             totalPengembalian REAL,
@@ -151,6 +152,14 @@ class DbHelper {
           try {
             await db.execute(
               'ALTER TABLE tutup_buku ADD COLUMN tanggalTutupBuku TEXT'
+            );
+          } catch (_) {}
+        }
+
+        if (oldVersion < 6) {
+          try {
+            await db.execute(
+              'ALTER TABLE tutup_buku ADD COLUMN targetKeuntungan REAL DEFAULT 0'
             );
           } catch (_) {}
         }
@@ -341,6 +350,9 @@ class DbHelper {
       } catch (_) {}
       try {
         await db.execute('ALTER TABLE tutup_buku ADD COLUMN tanggalTutupBuku TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE tutup_buku ADD COLUMN targetKeuntungan REAL DEFAULT 0');
       } catch (_) {}
       await db.insert('tutup_buku', data,
           conflictAlgorithm: ConflictAlgorithm.replace);
