@@ -193,6 +193,34 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       }
     }
 
+    String tglBuka = data['tanggalBukaBuku']?.toString() ?? '';
+    if (tglBuka.isEmpty) {
+      if (allTransaksi.isNotEmpty) {
+        tglBuka = allTransaksi.first.tanggalPinjam;
+      } else {
+        tglBuka = '${data['tahun']}-01-01';
+      }
+    }
+
+    String tglTutup = data['tanggalTutupBuku']?.toString() ?? '';
+    if (tglTutup.isEmpty) {
+      final created = data['createdAt']?.toString() ?? '';
+      tglTutup = created.isNotEmpty
+          ? created.split('T')[0]
+          : DateTime.now().toIso8601String().split('T')[0];
+    }
+
+    final double targetNominalPdf =
+        (data['targetKeuntungan'] as num?)?.toDouble() ??
+            provider.settings.targetKeuntungan;
+    final double totalKeuntunganPdf =
+        (data['totalKeuntungan'] as num?)?.toDouble() ?? 0.0;
+    final double targetPersenPdf = targetNominalPdf > 0
+        ? (totalKeuntunganPdf / targetNominalPdf) * 100
+        : 0.0;
+    final String targetPersenPdfStr =
+        '${targetPersenPdf.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -232,6 +260,24 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             ),
             pw.SizedBox(height: 4),
             pw.Center(
+              child: pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue100,
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Text(
+                  'PERIODE: ${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue900,
+                  ),
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
               child: pw.Text(
                 'Sukron08 - Rekapan Data Keuangan & Riwayat Nasabah',
                 style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
@@ -257,8 +303,11 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                     style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                   ),
                   pw.SizedBox(height: 8),
+                  _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
+                  _pdfRow('Total Target Keuntungan', formatRupiah(targetNominalPdf)),
+                  _pdfRow('Target Tercapai (%)', targetPersenPdfStr),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
-                  _pdfRow('Total Keuntungan', formatRupiah((data['totalKeuntungan'] as num).toDouble())),
+                  _pdfRow('Total Keuntungan', formatRupiah(totalKeuntunganPdf)),
                   _pdfRow('Total Pinjaman', formatRupiah((data['totalPinjaman'] as num).toDouble())),
                   _pdfRow('Total Pengembalian', formatRupiah((data['totalPengembalian'] as num).toDouble())),
                   pw.SizedBox(height: 6),
@@ -882,6 +931,34 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       }
     }
 
+    String tglBuka = data['tanggalBukaBuku']?.toString() ?? '';
+    if (tglBuka.isEmpty) {
+      if (allTransaksi.isNotEmpty) {
+        tglBuka = allTransaksi.first.tanggalPinjam;
+      } else {
+        tglBuka = '${data['tahun']}-01-01';
+      }
+    }
+
+    String tglTutup = data['tanggalTutupBuku']?.toString() ?? '';
+    if (tglTutup.isEmpty) {
+      final created = data['createdAt']?.toString() ?? '';
+      tglTutup = created.isNotEmpty
+          ? created.split('T')[0]
+          : DateTime.now().toIso8601String().split('T')[0];
+    }
+
+    final double targetNominalPdf =
+        (data['targetKeuntungan'] as num?)?.toDouble() ??
+            provider.settings.targetKeuntungan;
+    final double totalKeuntunganPdf =
+        (data['totalKeuntungan'] as num?)?.toDouble() ?? 0.0;
+    final double targetPersenPdf = targetNominalPdf > 0
+        ? (totalKeuntunganPdf / targetNominalPdf) * 100
+        : 0.0;
+    final String targetPersenPdfStr =
+        '${targetPersenPdf.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -921,6 +998,24 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             ),
             pw.SizedBox(height: 4),
             pw.Center(
+              child: pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue100,
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Text(
+                  'PERIODE: ${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue900,
+                  ),
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
               child: pw.Text(
                 'Sukron08 - Rekapan Data Keuangan & Riwayat Nasabah',
                 style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
@@ -946,8 +1041,11 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                     style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                   ),
                   pw.SizedBox(height: 8),
+                  _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
+                  _pdfRow('Total Target Keuntungan', formatRupiah(targetNominalPdf)),
+                  _pdfRow('Target Tercapai (%)', targetPersenPdfStr),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
-                  _pdfRow('Total Keuntungan', formatRupiah((data['totalKeuntungan'] as num).toDouble())),
+                  _pdfRow('Total Keuntungan', formatRupiah(totalKeuntunganPdf)),
                   _pdfRow('Total Pinjaman', formatRupiah((data['totalPinjaman'] as num).toDouble())),
                   _pdfRow('Total Pengembalian', formatRupiah((data['totalPengembalian'] as num).toDouble())),
                   pw.SizedBox(height: 6),
@@ -1186,6 +1284,43 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
   }
 
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+
+    String tglBuka = d['tanggalBukaBuku']?.toString() ?? '';
+    if (tglBuka.isEmpty) {
+      tglBuka = '${d['tahun']}-01-01';
+    }
+    String tglTutup = d['tanggalTutupBuku']?.toString() ?? '';
+    if (tglTutup.isEmpty) {
+      final created = d['createdAt']?.toString() ?? '';
+      tglTutup = created.isNotEmpty
+          ? created.split('T')[0]
+          : DateTime.now().toIso8601String().split('T')[0];
+    }
+
+    String formatTgl(String iso) {
+      if (iso.isEmpty) return '-';
+      try {
+        final dt = DateTime.parse(iso);
+        return DateFormat('dd MMM yyyy', 'id_ID').format(dt);
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    final periodeStr = '${formatTgl(tglBuka)} s/d ${formatTgl(tglTutup)}';
+
+    final double targetNominalModal =
+        (d['targetKeuntungan'] as num?)?.toDouble() ??
+            provider.settings.targetKeuntungan;
+    final double totalKeuntunganModal =
+        (d['totalKeuntungan'] as num?)?.toDouble() ?? 0.0;
+    final double targetPersenModal = targetNominalModal > 0
+        ? (totalKeuntunganModal / targetNominalModal) * 100
+        : 0.0;
+    final String targetPersenModalStr =
+        '${targetPersenModal.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1284,6 +1419,22 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         ),
                         child: Column(
                           children: [
+                            _buildRekapRow(
+                              'Periode Rekap',
+                              periodeStr,
+                              color: const Color(0xFF42A5F5),
+                              valueFontSize: 11.5,
+                            ),
+                            _buildRekapRow(
+                              'Total Target Keuntungan',
+                              formatRupiah(targetNominalModal),
+                            ),
+                            _buildRekapRow(
+                              'Target Tercapai (%)',
+                              targetPersenModalStr,
+                              color: const Color(0xFF4CAF50),
+                            ),
+                            const Divider(color: Colors.white12, height: 16),
                             _buildRekapRow(
                               'Modal Awal',
                               formatRupiah((d['modalAwal'] as num).toDouble()),
@@ -1602,7 +1753,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     );
   }
 
-  Widget _buildRekapRow(String label, String value, {Color? color}) {
+  Widget _buildRekapRow(String label, String value,
+      {Color? color, double? valueFontSize}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -1615,12 +1767,15 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
               fontSize: 14,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color ?? Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+          Flexible(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color ?? Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: valueFontSize ?? 15,
+              ),
             ),
           ),
         ],
