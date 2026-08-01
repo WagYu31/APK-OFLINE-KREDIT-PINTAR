@@ -656,12 +656,12 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                       ),
                       const SizedBox(height: 20),
                       _buildRekapRow(
-                        '① Modal Awal',
+                        'Modal Awal',
                         formatRupiah(
                             (_tutupBukuData!['modalAwal'] as num).toDouble()),
                       ),
                       _buildRekapRow(
-                        '⑮ Total Keuntungan',
+                        'Total Keuntungan',
                         formatRupiah(
                             (_tutupBukuData!['totalKeuntungan'] as num)
                                 .toDouble()),
@@ -669,13 +669,13 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                       ),
                       const Divider(color: Color(0xFFD4AF37), height: 24),
                       _buildRekapRow(
-                        '⑬ Total Pinjaman',
+                        'Total Pinjaman',
                         formatRupiah(
                             (_tutupBukuData!['totalPinjaman'] as num)
                                 .toDouble()),
                       ),
                       _buildRekapRow(
-                        '⑭ Total Pengembalian',
+                        'Total Pengembalian',
                         formatRupiah(
                             (_tutupBukuData!['totalPengembalian'] as num)
                                 .toDouble()),
@@ -1285,23 +1285,23 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         child: Column(
                           children: [
                             _buildRekapRow(
-                              '① Modal Awal',
+                              'Modal Awal',
                               formatRupiah((d['modalAwal'] as num).toDouble()),
                             ),
                             _buildRekapRow(
-                              '⑮ Total Keuntungan',
+                              'Total Keuntungan',
                               formatRupiah(
                                   (d['totalKeuntungan'] as num).toDouble()),
                               color: const Color(0xFF4CAF50),
                             ),
                             const Divider(color: Color(0xFFD4AF37), height: 24),
                             _buildRekapRow(
-                              '⑬ Total Pinjaman',
+                              'Total Pinjaman',
                               formatRupiah(
                                   (d['totalPinjaman'] as num).toDouble()),
                             ),
                             _buildRekapRow(
-                              '⑭ Total Pengembalian',
+                              'Total Pengembalian',
                               formatRupiah(
                                   (d['totalPengembalian'] as num).toDouble()),
                             ),

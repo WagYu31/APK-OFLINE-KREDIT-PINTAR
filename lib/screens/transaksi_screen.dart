@@ -668,7 +668,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildCalcRow(
-                            '⑬ Total Pinjaman', formatRupiah(double.tryParse(_nominalController.text.replaceAll('.', '')) ?? 0)),
+                            'Total Pinjaman', formatRupiah(double.tryParse(_nominalController.text.replaceAll('.', '')) ?? 0)),
                         _buildCalcRow(
                             'Biaya Admin (25rb/100rb)', formatRupiah(_biayaAdmin)),
                         const Divider(
@@ -676,12 +676,12 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                           height: 24,
                         ),
                         _buildCalcRow(
-                          '⑭ Estimasi Pengembalian',
+                          'Estimasi Pengembalian',
                           formatRupiah(_totalBayar),
                           isBold: true,
                         ),
                         _buildCalcRow(
-                          '⑮ Estimasi Keuntungan',
+                          'Estimasi Keuntungan',
                           formatRupiah(_keuntungan),
                           color: const Color(0xFF4CAF50),
                           isBold: true,
