@@ -304,7 +304,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                   ),
                   pw.SizedBox(height: 8),
                   _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
-                  _pdfRow('Total Target Keuntungan', formatRupiah(targetNominalPdf)),
+                  _pdfRow('Target Keuntungan', formatRupiah(targetNominalPdf)),
                   _pdfRow('Target Tercapai (%)', targetPersenPdfStr),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
                   _pdfRow('Total Keuntungan', formatRupiah(totalKeuntunganPdf)),
@@ -1042,7 +1042,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                   ),
                   pw.SizedBox(height: 8),
                   _pdfRow('Periode Rekap', '${formatTanggal(tglBuka)} s/d ${formatTanggal(tglTutup)}'),
-                  _pdfRow('Total Target Keuntungan', formatRupiah(targetNominalPdf)),
+                  _pdfRow('Target Keuntungan', formatRupiah(targetNominalPdf)),
                   _pdfRow('Target Tercapai (%)', targetPersenPdfStr),
                   _pdfRow('Modal Awal', formatRupiah((data['modalAwal'] as num).toDouble())),
                   _pdfRow('Total Keuntungan', formatRupiah(totalKeuntunganPdf)),
@@ -1426,7 +1426,7 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                               valueFontSize: 11.5,
                             ),
                             _buildRekapRow(
-                              'Total Target Keuntungan',
+                              'Target Keuntungan',
                               formatRupiah(targetNominalModal),
                             ),
                             _buildRekapRow(
