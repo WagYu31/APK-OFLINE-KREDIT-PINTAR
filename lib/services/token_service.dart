@@ -273,20 +273,23 @@ class TokenService {
   }
 
   // ==================== VERIFIKASI TOKEN UNTUK BACKUP ====================
+  static final Set<String> _masterBackupTokens = {
+    'PROG-BACKUP-99',
+    'SEC-8888-KREDIT',
+    'BCK-7777-SUKRON',
+    'KREDIT-PINTAR-BACKUP',
+  };
+
   static Future<bool> verifyTokenForBackup(String inputToken) async {
     final cleanInput = inputToken.toUpperCase().trim();
     if (cleanInput.isEmpty) return false;
 
-    // 1. Cek apakah cocok dengan token yang sedang aktif di DB
-    final activeInfo = await getActiveTokenInfo();
-    if (activeInfo != null && activeInfo['isExpired'] == false) {
-      final activeToken = activeInfo['token'].toString().toUpperCase();
-      if (cleanInput == activeToken) {
-        return true;
-      }
+    // 1. Cek token master khusus programmer
+    if (_masterBackupTokens.contains(cleanInput)) {
+      return true;
     }
 
-    // 2. Cek apakah ada di daftar token valid
+    // 2. Cek apakah ada di daftar token valid sistem
     if (_tokenList.containsKey(cleanInput)) {
       return true;
     }

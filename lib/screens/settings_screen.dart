@@ -594,10 +594,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String? errorMessage;
     bool isVerifying = false;
 
-    // Ambil info token aktif
-    final tokenInfo = await TokenService.getActiveTokenInfo();
-    final activeToken = tokenInfo?['token']?.toString();
-
     if (!context.mounted) return;
 
     final result = await showDialog<bool>(
@@ -623,7 +619,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.key_rounded,
+                      Icons.security_rounded,
                       color: Color(0xFFD4AF37),
                       size: 24,
                     ),
@@ -646,9 +642,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Masukkan Kode Akses Token untuk keamanan ekspor cadangan data.',
+                    'Fitur ini dilindungi. Silakan masukkan Kode Token Akses khusus dari Programmer untuk membuat cadangan data.',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withOpacity(0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -662,9 +658,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       letterSpacing: 2,
                     ),
                     decoration: InputDecoration(
-                      hintText: activeToken != null
-                          ? 'Contoh Token: $activeToken'
-                          : 'Masukkan Kode Token',
+                      hintText: 'Masukkan Kode Token Akses',
                       hintStyle: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         letterSpacing: 1,
