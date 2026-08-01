@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
 import '../models/nasabah.dart';
@@ -112,16 +111,6 @@ class AppProvider extends ChangeNotifier {
     await refreshData();
   }
 
-  Future<void> deleteNasabah(int id) async {
-    await _db.deleteNasabah(id);
-    await refreshData();
-  }
-
-  Future<void> deleteMultipleNasabah(List<int> ids) async {
-    await _db.deleteMultipleNasabah(ids);
-    await refreshData();
-  }
-
   // ==================== TRANSAKSI ====================
 
   Future<int> addTransaksi(Transaksi transaksi) async {
@@ -139,75 +128,30 @@ class AppProvider extends ChangeNotifier {
     return transaksi.any((t) => t.status != 'lunas');
   }
 
-  /// Process a payment on a transaksi, automatically cascading any excess payment
-  /// to other active loans of the same nasabah.
+  /// Process a payment on a transaksi
   Future<void> prosesPembayaran({
     required Transaksi transaksi,
     required double nominal,
     required String tanggalBayar,
     String? tanggalJanjiBerikutnya,
   }) async {
-    double remainingNominal = nominal;
+    final pembayaran = Pembayaran(
+      nominal: nominal,
+      tanggal: tanggalBayar,
+      tanggalJanjiBerikutnya: tanggalJanjiBerikutnya,
+    );
 
-    // Fetch all active transactions for this nasabah from DB
-    final allNasabahTx = await _db.getTransaksiByNasabah(transaksi.nasabahId);
-    final activeTxList = allNasabahTx.where((t) => t.status != 'lunas').toList();
+    transaksi.riwayatPembayaran.add(pembayaran);
+    transaksi.sisaHutang = transaksi.totalHarusBayar - transaksi.totalDibayar;
 
-    // Ensure target transaksi is first in line
-    activeTxList.sort((a, b) {
-      if (a.id == transaksi.id) return -1;
-      if (b.id == transaksi.id) return 1;
-      return a.tanggalJatuhTempo.compareTo(b.tanggalJatuhTempo);
-    });
-
-    for (var currentTx in activeTxList) {
-      if (remainingNominal <= 0) break;
-
-      final currentSisa = currentTx.sisaHutang;
-      final paymentForThisTx = (remainingNominal > currentSisa && currentSisa > 0)
-          ? currentSisa
-          : remainingNominal;
-
-      final pembayaran = Pembayaran(
-        nominal: paymentForThisTx,
-        tanggal: tanggalBayar,
-        tanggalJanjiBerikutnya: paymentForThisTx < currentSisa ? tanggalJanjiBerikutnya : null,
-      );
-
-      currentTx.riwayatPembayaran.add(pembayaran);
-      final newSisa = currentTx.totalHarusBayar - currentTx.totalDibayar;
-
-      if (newSisa <= 0) {
-        currentTx.status = 'lunas';
-        currentTx.sisaHutang = 0;
-      } else {
-        currentTx.status = 'sebagian';
-        currentTx.sisaHutang = newSisa;
-      }
-
-      await _db.updateTransaksi(currentTx);
-      remainingNominal -= paymentForThisTx;
+    if (transaksi.sisaHutang <= 0) {
+      transaksi.status = 'lunas';
+      transaksi.sisaHutang = 0;
+    } else {
+      transaksi.status = 'sebagian';
     }
 
-    // If there is still excess remainingNominal even after all active loans are paid lunas,
-    // attach the remainder to the target transaction as an overpayment record.
-    if (remainingNominal > 0 && activeTxList.isNotEmpty) {
-      final targetTx = activeTxList.firstWhere(
-        (t) => t.id == transaksi.id,
-        orElse: () => activeTxList.first,
-      );
-      final lastP = targetTx.riwayatPembayaran.lastOrNull;
-      if (lastP != null) {
-        targetTx.riwayatPembayaran.removeLast();
-        targetTx.riwayatPembayaran.add(Pembayaran(
-          nominal: lastP.nominal + remainingNominal,
-          tanggal: lastP.tanggal,
-          tanggalJanjiBerikutnya: lastP.tanggalJanjiBerikutnya,
-        ));
-        await _db.updateTransaksi(targetTx);
-      }
-    }
-
+    await _db.updateTransaksi(transaksi);
     await refreshData();
   }
 
@@ -240,27 +184,9 @@ class AppProvider extends ChangeNotifier {
       return created.year == tahun;
     }).length;
 
-    // Determine start date of period (Tanggal Buka Buku)
-    String tanggalBukaBuku = '$tahun-01-01';
-    if (allTransaksi.isNotEmpty) {
-      final sortedTx = List<Transaksi>.from(allTransaksi)
-        ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
-      if (sortedTx.first.tanggalPinjam.isNotEmpty) {
-        tanggalBukaBuku = sortedTx.first.tanggalPinjam;
-      }
-    }
-
-    // Build JSON snapshot of all nasabah & transactions for permanent history
-    final snapshotObj = {
-      'nasabah': allNasabah.map((n) => n.toMap()).toList(),
-      'transaksi': allTransaksi.map((t) => t.toMap()).toList(),
-    };
-    final snapshotJson = jsonEncode(snapshotObj);
-
     final data = {
       'tahun': tahun,
       'modalAwal': _settings.modalAwal,
-      'targetKeuntungan': _settings.targetKeuntungan,
       'totalKeuntungan': stats['totalKeuntungan'] ?? 0.0,
       'totalPinjaman': stats['totalPinjaman'] ?? 0.0,
       'totalPengembalian': stats['totalPengembalian'] ?? 0.0,
@@ -269,9 +195,6 @@ class AppProvider extends ChangeNotifier {
       'totalNasabahBaru': nasabahBaru,
       'totalKartuKuning': stats['totalKartuKuning'] ?? 0,
       'totalKartuMerah': stats['totalKartuMerah'] ?? 0,
-      'tanggalBukaBuku': tanggalBukaBuku,
-      'tanggalTutupBuku': DateTime.now().toIso8601String().split('T')[0],
-      'snapshotData': snapshotJson,
       'createdAt': DateTime.now().toIso8601String(),
     };
 
@@ -284,6 +207,30 @@ class AppProvider extends ChangeNotifier {
       await _db.resetAllData();
     } else {
       await _db.resetTransaksiOnly();
+    }
+    await refreshData();
+  }
+
+  Future<List<Map<String, dynamic>>> getRiwayatTutupBuku() async {
+    return _db.getAllTutupBuku();
+  }
+
+  String getNasabahNama(int nasabahId) {
+    final nasabah = _allNasabah.firstWhere(
+      (n) => n.id == nasabahId,
+      orElse: () => Nasabah(nama: 'Unknown', nomorTelpon: ''),
+    );
+    return nasabah.nama;
+  }
+
+  Nasabah? getNasabahFromList(int nasabahId) {
+    try {
+      return _allNasabah.firstWhere((n) => n.id == nasabahId);
+    } catch (_) {
+      return null;
+    }
+  }
+}
     }
     await refreshData();
   }
