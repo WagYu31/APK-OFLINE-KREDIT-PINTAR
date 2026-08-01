@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
 import '../widgets/confirm_dialog.dart';
+import '../services/token_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -472,23 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final provider =
-                            Provider.of<AppProvider>(context, listen: false);
-                        final path = await provider.exportBackupFile();
-                        if (path != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                  'File Cadangan Berhasil Dibuat & Siap Bagikan! 📤'),
-                              backgroundColor: const Color(0xFF4CAF50),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: () => _showTokenVerificationForBackup(context),
                       icon: const Icon(Icons.upload_file, size: 20),
                       label: const Text(
                         'Cadangkan Data (Ekspor File / WA)',
@@ -602,5 +587,201 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showTokenVerificationForBackup(BuildContext context) async {
+    final tokenController = TextEditingController();
+    String? errorMessage;
+    bool isVerifying = false;
+
+    // Ambil info token aktif
+    final tokenInfo = await TokenService.getActiveTokenInfo();
+    final activeToken = tokenInfo?['token']?.toString();
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1A2E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(
+                  color: const Color(0xFFD4AF37).withOpacity(0.4),
+                ),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.key_rounded,
+                      color: Color(0xFFD4AF37),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      '🔑 Akses Token Cadangan',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Masukkan Kode Akses Token untuk keamanan ekspor cadangan data.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: tokenController,
+                    textCapitalization: TextCapitalization.characters,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: activeToken != null
+                          ? 'Contoh Token: $activeToken'
+                          : 'Masukkan Kode Token',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        letterSpacing: 1,
+                        fontSize: 13,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.06),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                      ),
+                    ),
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      errorMessage!,
+                      style: const TextStyle(
+                        color: Color(0xFFE53935),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isVerifying
+                      ? null
+                      : () => Navigator.pop(dialogCtx, false),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isVerifying
+                      ? null
+                      : () async {
+                          final input = tokenController.text.trim();
+                          if (input.isEmpty) {
+                            setDialogState(() {
+                              errorMessage = 'Kode token tidak boleh kosong!';
+                            });
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isVerifying = true;
+                            errorMessage = null;
+                          });
+
+                          final isValid =
+                              await TokenService.verifyTokenForBackup(input);
+
+                          if (isValid) {
+                            if (dialogCtx.mounted) {
+                              Navigator.pop(dialogCtx, true);
+                            }
+                          } else {
+                            setDialogState(() {
+                              isVerifying = false;
+                              errorMessage =
+                                  'Kode Token Salah / Akses Ditolak! ❌';
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isVerifying
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Text(
+                          'Verifikasi & Cadangkan 📤',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true && context.mounted) {
+      final provider = Provider.of<AppProvider>(context, listen: false);
+      final path = await provider.exportBackupFile();
+      if (path != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Akses Token Diterima! File Cadangan Berhasil Dibuat & Siap Bagikan! 📤'),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
   }
 }

@@ -271,4 +271,26 @@ class TokenService {
       return '${sisaDetik}d lagi';
     }
   }
+
+  // ==================== VERIFIKASI TOKEN UNTUK BACKUP ====================
+  static Future<bool> verifyTokenForBackup(String inputToken) async {
+    final cleanInput = inputToken.toUpperCase().trim();
+    if (cleanInput.isEmpty) return false;
+
+    // 1. Cek apakah cocok dengan token yang sedang aktif di DB
+    final activeInfo = await getActiveTokenInfo();
+    if (activeInfo != null && activeInfo['isExpired'] == false) {
+      final activeToken = activeInfo['token'].toString().toUpperCase();
+      if (cleanInput == activeToken) {
+        return true;
+      }
+    }
+
+    // 2. Cek apakah ada di daftar token valid
+    if (_tokenList.containsKey(cleanInput)) {
+      return true;
+    }
+
+    return false;
+  }
 }
