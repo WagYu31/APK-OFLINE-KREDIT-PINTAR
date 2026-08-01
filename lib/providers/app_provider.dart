@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
 import '../models/nasabah.dart';
@@ -80,6 +81,18 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> updateNasabah(Nasabah nasabah) async {
     await _db.updateNasabah(nasabah);
+    await refreshData();
+  }
+
+  Future<void> deleteNasabah(int id) async {
+    await _db.deleteNasabah(id);
+    await refreshData();
+  }
+
+  Future<void> deleteMultipleNasabah(List<int> ids) async {
+    for (final id in ids) {
+      await _db.deleteNasabah(id);
+    }
     await refreshData();
   }
 
@@ -177,16 +190,63 @@ class AppProvider extends ChangeNotifier {
     final stats = await _db.getStatistik();
     final allTransaksi = await _db.getAllTransaksi();
     final allNasabah = await _db.getAllNasabah();
+    final listTutupBuku = await _db.getAllTutupBuku();
 
     final tahun = _settings.tahunAktif;
-    final nasabahBaru = allNasabah.where((n) {
-      final created = DateTime.parse(n.createdAt);
-      return created.year == tahun;
-    }).length;
+
+    // Determine start date of period (Tanggal Buka Buku)
+    String tanggalBukaBuku = '$tahun-01-01';
+
+    final prevList =
+        listTutupBuku.where((tb) => tb['tahun'] != tahun).toList();
+
+    if (prevList.isNotEmpty) {
+      final lastClosed = prevList.first['tanggalTutupBuku']?.toString();
+      if (lastClosed != null && lastClosed.isNotEmpty) {
+        tanggalBukaBuku = lastClosed;
+      }
+    } else if (allTransaksi.isNotEmpty) {
+      final sortedTx = List<Transaksi>.from(allTransaksi)
+        ..sort((a, b) => a.tanggalPinjam.compareTo(b.tanggalPinjam));
+      if (sortedTx.first.tanggalPinjam.isNotEmpty) {
+        tanggalBukaBuku = sortedTx.first.tanggalPinjam;
+      }
+    }
+
+    // Nasabah Baru is strictly nasabah created on or after tanggalBukaBuku in this period
+    int nasabahBaru = 0;
+    if (prevList.isEmpty && listTutupBuku.isEmpty) {
+      // First book ever: all nasabah registered in this active year
+      nasabahBaru = allNasabah.where((n) {
+        if (n.createdAt.isEmpty) return false;
+        try {
+          final dt = DateTime.parse(n.createdAt);
+          return dt.year == tahun;
+        } catch (_) {
+          return false;
+        }
+      }).length;
+    } else {
+      // Subsequent period: count only nasabah registered on/after opening date of this period
+      final bukaBukuDateStr = tanggalBukaBuku.split('T')[0];
+      nasabahBaru = allNasabah.where((n) {
+        if (n.createdAt.isEmpty) return false;
+        final nCreatedDateStr = n.createdAt.split('T')[0];
+        return nCreatedDateStr.compareTo(bukaBukuDateStr) >= 0;
+      }).length;
+    }
+
+    // Build JSON snapshot of all nasabah & transactions for permanent history
+    final snapshotObj = {
+      'nasabah': allNasabah.map((n) => n.toMap()).toList(),
+      'transaksi': allTransaksi.map((t) => t.toMap()).toList(),
+    };
+    final snapshotJson = jsonEncode(snapshotObj);
 
     final data = {
       'tahun': tahun,
       'modalAwal': _settings.modalAwal,
+      'targetKeuntungan': _settings.targetKeuntungan,
       'totalKeuntungan': stats['totalKeuntungan'] ?? 0.0,
       'totalPinjaman': stats['totalPinjaman'] ?? 0.0,
       'totalPengembalian': stats['totalPengembalian'] ?? 0.0,
@@ -195,6 +255,9 @@ class AppProvider extends ChangeNotifier {
       'totalNasabahBaru': nasabahBaru,
       'totalKartuKuning': stats['totalKartuKuning'] ?? 0,
       'totalKartuMerah': stats['totalKartuMerah'] ?? 0,
+      'tanggalBukaBuku': tanggalBukaBuku,
+      'tanggalTutupBuku': DateTime.now().toIso8601String().split('T')[0],
+      'snapshotData': snapshotJson,
       'createdAt': DateTime.now().toIso8601String(),
     };
 
@@ -207,30 +270,6 @@ class AppProvider extends ChangeNotifier {
       await _db.resetAllData();
     } else {
       await _db.resetTransaksiOnly();
-    }
-    await refreshData();
-  }
-
-  Future<List<Map<String, dynamic>>> getRiwayatTutupBuku() async {
-    return _db.getAllTutupBuku();
-  }
-
-  String getNasabahNama(int nasabahId) {
-    final nasabah = _allNasabah.firstWhere(
-      (n) => n.id == nasabahId,
-      orElse: () => Nasabah(nama: 'Unknown', nomorTelpon: ''),
-    );
-    return nasabah.nama;
-  }
-
-  Nasabah? getNasabahFromList(int nasabahId) {
-    try {
-      return _allNasabah.firstWhere((n) => n.id == nasabahId);
-    } catch (_) {
-      return null;
-    }
-  }
-}
     }
     await refreshData();
   }
