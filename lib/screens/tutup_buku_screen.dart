@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +7,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
+import '../models/nasabah.dart';
+import '../models/transaksi.dart';
 import '../widgets/confirm_dialog.dart';
+import 'pdf_preview_screen.dart';
 
 class TutupBukuScreen extends StatefulWidget {
   const TutupBukuScreen({super.key});
@@ -539,10 +543,19 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Tutup_Buku_${data['tahun']}.pdf',
-    );
+    final pdfBytes = await pdf.save();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Laporan Tutup Buku ${data['tahun']}',
+            pdfBytes: pdfBytes,
+            fileName: 'Tutup_Buku_${data['tahun']}.pdf',
+          ),
+        ),
+      );
+    }
   }
 
   pw.Widget _pdfRow(String label, String value) {
@@ -916,8 +929,32 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
 
   Future<void> _exportPdfForData(Map<String, dynamic> data) async {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    final allNasabah = provider.allNasabah;
-    final allTransaksi = provider.allTransaksi;
+    List<Nasabah> allNasabah = [];
+    List<Transaksi> allTransaksi = [];
+
+    if (data['snapshotData'] != null &&
+        data['snapshotData'].toString().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data['snapshotData'].toString());
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['nasabah'] is List) {
+            allNasabah = (decoded['nasabah'] as List)
+                .map((item) =>
+                    Nasabah.fromMap(Map<String, dynamic>.from(item as Map)))
+                .toList();
+          }
+          if (decoded['transaksi'] is List) {
+            allTransaksi = (decoded['transaksi'] as List)
+                .map((item) =>
+                    Transaksi.fromMap(Map<String, dynamic>.from(item as Map)))
+                .toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (allNasabah.isEmpty) allNasabah = provider.allNasabah;
+    if (allTransaksi.isEmpty) allTransaksi = provider.allTransaksi;
 
     final pdf = pw.Document();
 
@@ -1277,14 +1314,50 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Tutup_Buku_${data['tahun']}.pdf',
-    );
+    final pdfBytes = await pdf.save();
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Laporan Tutup Buku ${data['tahun']}',
+            pdfBytes: pdfBytes,
+            fileName: 'Tutup_Buku_${data['tahun']}.pdf',
+          ),
+        ),
+      );
+    }
   }
 
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
     final provider = Provider.of<AppProvider>(context, listen: false);
+
+    List<Nasabah> snapshotNasabahList = [];
+    List<Transaksi> snapshotTxList = [];
+
+    if (d['snapshotData'] != null &&
+        d['snapshotData'].toString().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(d['snapshotData'].toString());
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['nasabah'] is List) {
+            snapshotNasabahList = (decoded['nasabah'] as List)
+                .map((item) =>
+                    Nasabah.fromMap(Map<String, dynamic>.from(item as Map)))
+                .toList();
+          }
+          if (decoded['transaksi'] is List) {
+            snapshotTxList = (decoded['transaksi'] as List)
+                .map((item) =>
+                    Transaksi.fromMap(Map<String, dynamic>.from(item as Map)))
+                .toList();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (snapshotNasabahList.isEmpty) snapshotNasabahList = provider.allNasabah;
+    if (snapshotTxList.isEmpty) snapshotTxList = provider.allTransaksi;
 
     String tglBuka = d['tanggalBukaBuku']?.toString() ?? '';
     if (tglBuka.isEmpty) {
@@ -1496,8 +1569,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ...provider.allNasabah.map((n) {
-                        final nTx = provider.allTransaksi
+                      ...snapshotNasabahList.map((n) {
+                        final nTx = snapshotTxList
                             .where((t) => t.nasabahId == n.id)
                             .toList();
 
@@ -1676,48 +1749,55 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
             borderRadius: BorderRadius.circular(14),
             onTap: () => _showDetailRiwayatTutupBuku(context, d),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.book,
-                          color: Color(0xFFD4AF37),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Tahun ${d['tahun']}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          Text(
-                            'Klik untuk lihat detail & PDF',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.4),
-                              fontSize: 11,
-                            ),
+                          child: const Icon(
+                            Icons.book,
+                            color: Color(0xFFD4AF37),
+                            size: 20,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tahun ${d['tahun']}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Text(
+                                'Klik untuk lihat detail & PDF',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.4),
+                                  fontSize: 10.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         formatRupiah(
@@ -1725,14 +1805,14 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         style: const TextStyle(
                           color: Color(0xFF4CAF50),
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          fontSize: 13.5,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 2),
                       Icon(
                         Icons.chevron_right,
                         color: Colors.white.withOpacity(0.4),
-                        size: 20,
+                        size: 18,
                       ),
                     ],
                   ),
