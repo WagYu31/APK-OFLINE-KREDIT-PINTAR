@@ -1329,6 +1329,125 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
     }
   }
 
+  Future<void> _confirmHapusRiwayatTutupBuku(BuildContext context, int tahun) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: Colors.red.withOpacity(0.4),
+            ),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.delete_forever_rounded,
+                  color: Colors.redAccent,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Hapus Rekap $tahun?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Apakah Anda yakin ingin menghapus data riwayat Tutup Buku Tahun $tahun?',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 13.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Colors.amber, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tindakan ini permanen dan data arsip tahun $tahun akan dihapus dari riwayat.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                'Batal',
+                style: TextStyle(color: Colors.white.withOpacity(0.6)),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              icon: const Icon(Icons.delete, size: 16),
+              label: const Text('Hapus Permanent'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      final provider = Provider.of<AppProvider>(context, listen: false);
+      await provider.deleteTutupBuku(tahun);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Riwayat Tutup Buku Tahun $tahun berhasil dihapus'),
+            backgroundColor: const Color(0xFFE53935),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setState(() {});
+      }
+    }
+  }
+
   void _showDetailRiwayatTutupBuku(BuildContext context, Map<String, dynamic> d) {
     final provider = Provider.of<AppProvider>(context, listen: false);
 
@@ -1462,9 +1581,22 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
-                      onPressed: () => Navigator.pop(ctx),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                          tooltip: 'Hapus Riwayat Tutup Buku',
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _confirmHapusRiwayatTutupBuku(
+                                context, (d['tahun'] as num).toInt());
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white54),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1748,6 +1880,8 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => _showDetailRiwayatTutupBuku(context, d),
+            onLongPress: () => _confirmHapusRiwayatTutupBuku(
+                context, (d['tahun'] as num).toInt()),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
@@ -1782,11 +1916,11 @@ class _TutupBukuScreenState extends State<TutupBukuScreen> {
                                 ),
                               ),
                               Text(
-                                'Klik untuk lihat detail & PDF',
+                                'Klik detail & PDF • Tekan lama utk hapus',
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.4),
-                                  fontSize: 10.5,
+                                  fontSize: 10,
                                 ),
                               ),
                             ],
