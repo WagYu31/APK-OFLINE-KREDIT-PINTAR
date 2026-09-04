@@ -175,10 +175,23 @@ class _BayarScreenState extends State<BayarScreen> {
     final totalSisaHutangNasabah = allActiveForNasabah.fold(
         0.0, (sum, t) => sum + t.sisaHutang);
 
+    final totalNominalGabungan = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.nominalPinjaman);
+    final totalAdminGabungan = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.biayaAdmin);
+    final totalHarusBayarGabungan = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.totalHarusBayar);
+    final totalDibayarGabungan = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.totalDibayar);
+    final totalSisaHutangGabungan = allActiveForNasabah.fold(
+        0.0, (sum, t) => sum + t.sisaHutang);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: AppBar(
-        title: const Text('Proses Pembayaran'),
+        title: Text(widget.isGabungan
+            ? 'Proses Pembayaran Sekaligus'
+            : 'Proses Pembayaran'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
@@ -219,7 +232,7 @@ class _BayarScreenState extends State<BayarScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Total Sisa Hutang: ${formatRupiah(totalSisaHutangNasabah)}. Kelebihan pembayaran akan otomatis melunasi pinjaman ke-1 & memotong pinjaman ke-2!',
+                            'Total Sisa Hutang: ${formatRupiah(totalSisaHutangNasabah)}. Pembayaran akan otomatis melunasi pinjaman ke-1 & memotong pinjaman ke-2!',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 11,
@@ -248,44 +261,128 @@ class _BayarScreenState extends State<BayarScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    nama,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        nama,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (widget.isGabungan)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color:
+                                    const Color(0xFFD4AF37).withOpacity(0.5)),
+                          ),
+                          child: const Text(
+                            '⚡ BAYAR SEKALIGUS',
+                            style: TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  _buildInfoRow(
-                      'Nominal Pinjaman',
-                      formatRupiah(widget.transaksi.nominalPinjaman)),
-                  _buildInfoRow(
-                      'Biaya Admin',
-                      formatRupiah(widget.transaksi.biayaAdmin)),
-                  _buildInfoRow(
-                      'Total Harus Bayar',
-                      formatRupiah(widget.transaksi.totalHarusBayar)),
-                  const Divider(color: Color(0xFFD4AF37), height: 24),
-                  _buildInfoRow(
-                      'Sudah Dibayar',
-                      formatRupiah(widget.transaksi.totalDibayar),
-                      color: const Color(0xFF4CAF50)),
-                  _buildInfoRow(
-                    'Sisa Hutang',
-                    formatRupiah(widget.transaksi.sisaHutang),
-                    color: const Color(0xFFE53935),
-                    isBold: true,
-                  ),
-                  _buildInfoRow(
-                      'Jatuh Tempo',
-                      formatTanggal(widget.transaksi.tanggalJatuhTempo)),
-                  _buildInfoRow(
-                      'Status',
-                      widget.transaksi.status.toUpperCase(),
-                      color: widget.transaksi.status == 'lunas'
-                          ? const Color(0xFF4CAF50)
-                          : const Color(0xFFFFB300)),
+                  if (widget.isGabungan) ...[
+                    _buildInfoRow(
+                        'Total Pinjaman (${allActiveForNasabah.length} Pinjaman)',
+                        formatRupiah(totalNominalGabungan)),
+                    _buildInfoRow(
+                        'Total Biaya Admin', formatRupiah(totalAdminGabungan)),
+                    _buildInfoRow('Total Harus Bayar',
+                        formatRupiah(totalHarusBayarGabungan)),
+                    const Divider(color: Color(0xFFD4AF37), height: 24),
+                    _buildInfoRow('Total Sudah Dibayar',
+                        formatRupiah(totalDibayarGabungan),
+                        color: const Color(0xFF4CAF50)),
+                    _buildInfoRow(
+                      'TOTAL SISA HUTANG SEKALIGUS',
+                      formatRupiah(totalSisaHutangGabungan),
+                      color: const Color(0xFFE53935),
+                      isBold: true,
+                    ),
+                    _buildInfoRow('Status Ringkasan',
+                        '${allActiveForNasabah.length} PINJAMAN AKTIF',
+                        color: const Color(0xFFFFB300)),
+                    const SizedBox(height: 10),
+                    const Divider(color: Colors.white12, height: 16),
+                    Text(
+                      '📋 Rincian Pinjaman Yang Akan Dibayar:',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...allActiveForNasabah.map((t) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '• Pinjaman ${formatRupiah(t.nominalPinjaman)} (${formatTanggal(t.tanggalPinjam)})',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 11.5,
+                              ),
+                            ),
+                            Text(
+                              'Sisa: ${formatRupiah(t.sisaHutang)}',
+                              style: const TextStyle(
+                                color: Color(0xFFFF5252),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    _buildInfoRow(
+                        'Nominal Pinjaman',
+                        formatRupiah(widget.transaksi.nominalPinjaman)),
+                    _buildInfoRow(
+                        'Biaya Admin',
+                        formatRupiah(widget.transaksi.biayaAdmin)),
+                    _buildInfoRow(
+                        'Total Harus Bayar',
+                        formatRupiah(widget.transaksi.totalHarusBayar)),
+                    const Divider(color: Color(0xFFD4AF37), height: 24),
+                    _buildInfoRow(
+                        'Sudah Dibayar',
+                        formatRupiah(widget.transaksi.totalDibayar),
+                        color: const Color(0xFF4CAF50)),
+                    _buildInfoRow(
+                      'Sisa Hutang',
+                      formatRupiah(widget.transaksi.sisaHutang),
+                      color: const Color(0xFFE53935),
+                      isBold: true,
+                    ),
+                    _buildInfoRow(
+                        'Jatuh Tempo',
+                        formatTanggal(widget.transaksi.tanggalJatuhTempo)),
+                    _buildInfoRow(
+                        'Status',
+                        widget.transaksi.status.toUpperCase(),
+                        color: widget.transaksi.status == 'lunas'
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFFFFB300)),
+                  ],
                 ],
               ),
             ),
