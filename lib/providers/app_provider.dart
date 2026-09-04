@@ -172,6 +172,52 @@ class AppProvider extends ChangeNotifier {
     await refreshData();
   }
 
+  /// Process combined payment across multiple active transactions for a nasabah
+  Future<void> prosesPembayaranGabungan({
+    required List<Transaksi> activeTransaksiList,
+    required double totalNominalBayar,
+    required String tanggalBayar,
+    String? tanggalJanjiBerikutnya,
+  }) async {
+    double sisaUang = totalNominalBayar;
+
+    // Sort active transactions by ID ascending (oldest first)
+    final sortedTx = List<Transaksi>.from(activeTransaksiList)
+      ..sort((a, b) => (a.id ?? 0).compareTo(b.id ?? 0));
+
+    for (int i = 0; i < sortedTx.length; i++) {
+      if (sisaUang <= 0) break;
+      final tx = sortedTx[i];
+      final hutang = tx.sisaHutang;
+      if (hutang <= 0) continue;
+
+      final bayarUntukTxIni = sisaUang >= hutang ? hutang : sisaUang;
+      sisaUang -= bayarUntukTxIni;
+
+      final isLastTx = (i == sortedTx.length - 1) || sisaUang <= 0;
+
+      final pembayaran = Pembayaran(
+        nominal: bayarUntukTxIni,
+        tanggal: tanggalBayar,
+        tanggalJanjiBerikutnya: isLastTx ? tanggalJanjiBerikutnya : null,
+      );
+
+      tx.riwayatPembayaran.add(pembayaran);
+      tx.sisaHutang = tx.totalHarusBayar - tx.totalDibayar;
+
+      if (tx.sisaHutang <= 0) {
+        tx.status = 'lunas';
+        tx.sisaHutang = 0;
+      } else {
+        tx.status = 'sebagian';
+      }
+
+      await _db.updateTransaksi(tx);
+    }
+
+    await refreshData();
+  }
+
   /// Mark a transaksi as fully paid (lunas)
   Future<void> tandaiLunas(Transaksi transaksi) async {
     final sisa = transaksi.sisaHutang;

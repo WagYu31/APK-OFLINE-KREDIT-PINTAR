@@ -8,8 +8,13 @@ import '../widgets/confirm_dialog.dart';
 
 class BayarScreen extends StatefulWidget {
   final Transaksi transaksi;
+  final bool isGabungan;
 
-  const BayarScreen({super.key, required this.transaksi});
+  const BayarScreen({
+    super.key,
+    required this.transaksi,
+    this.isGabungan = false,
+  });
 
   @override
   State<BayarScreen> createState() => _BayarScreenState();
@@ -26,6 +31,22 @@ class _BayarScreenState extends State<BayarScreen> {
     super.initState();
     _tanggalController.text =
         DateFormat('dd MMMM yyyy', 'id_ID').format(_tanggalBayar);
+
+    if (widget.isGabungan) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final provider = Provider.of<AppProvider>(context, listen: false);
+        final allActive = provider.allTransaksi
+            .where((t) =>
+                t.nasabahId == widget.transaksi.nasabahId && t.status != 'lunas')
+            .toList();
+        final totalHutang =
+            allActive.fold(0.0, (sum, t) => sum + t.sisaHutang);
+        if (totalHutang > 0) {
+          _nominalController.text =
+              NumberFormat('#,###', 'id_ID').format(totalHutang.toInt());
+        }
+      });
+    }
   }
 
   @override
@@ -74,15 +95,19 @@ class _BayarScreenState extends State<BayarScreen> {
     final allActiveForNasabah = provider.allTransaksi
         .where((t) => t.nasabahId == widget.transaksi.nasabahId && t.status != 'lunas')
         .toList();
-    final totalSisaHutangNasabah = allActiveForNasabah.fold(
-        0.0, (sum, t) => sum + t.sisaHutang);
+    final totalSisaHutangNasabah = widget.isGabungan
+        ? allActiveForNasabah.fold(0.0, (sum, t) => sum + t.sisaHutang)
+        : widget.transaksi.sisaHutang;
 
     final sisaSetelahBayar = totalSisaHutangNasabah - nominal;
     final isLunas = sisaSetelahBayar <= 0;
 
-    String message = 'Proses pembayaran ${formatRupiah(nominal)}?';
+    String message = widget.isGabungan
+        ? 'Proses Pembayaran Gabungan ${formatRupiah(nominal)}?'
+        : 'Proses pembayaran ${formatRupiah(nominal)}?';
+
     if (isLunas) {
-      message += '\n\nNasabah akan dinyatakan LUNAS ✅';
+      message += '\n\nSeluruh sisa hutang nasabah ini akan LUNAS ✅';
     } else {
       message +=
           '\n\nSisa hutang: ${formatRupiah(sisaSetelahBayar)}';
@@ -103,14 +128,25 @@ class _BayarScreenState extends State<BayarScreen> {
 
     if (!confirmed) return;
 
-    await provider.prosesPembayaran(
-      transaksi: widget.transaksi,
-      nominal: nominal,
-      tanggalBayar: _tanggalBayar.toIso8601String().split('T')[0],
-      tanggalJanjiBerikutnya: _tanggalJanjiBerikutnya != null
-          ? _tanggalJanjiBerikutnya!.toIso8601String().split('T')[0]
-          : null,
-    );
+    if (widget.isGabungan) {
+      await provider.prosesPembayaranGabungan(
+        activeTransaksiList: allActiveForNasabah,
+        totalNominalBayar: nominal,
+        tanggalBayar: _tanggalBayar.toIso8601String().split('T')[0],
+        tanggalJanjiBerikutnya: _tanggalJanjiBerikutnya != null
+            ? _tanggalJanjiBerikutnya!.toIso8601String().split('T')[0]
+            : null,
+      );
+    } else {
+      await provider.prosesPembayaran(
+        transaksi: widget.transaksi,
+        nominal: nominal,
+        tanggalBayar: _tanggalBayar.toIso8601String().split('T')[0],
+        tanggalJanjiBerikutnya: _tanggalJanjiBerikutnya != null
+            ? _tanggalJanjiBerikutnya!.toIso8601String().split('T')[0]
+            : null,
+      );
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

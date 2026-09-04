@@ -1348,11 +1348,17 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
       return;
     }
 
+    final double totalHutang =
+        activeLoans.fold(0.0, (sum, t) => sum + t.sisaHutang);
+
     if (activeLoans.length == 1) {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BayarScreen(transaksi: activeLoans.first),
+          builder: (_) => BayarScreen(
+            transaksi: activeLoans.first,
+            isGabungan: false,
+          ),
         ),
       );
       _loadTransaksi();
@@ -1373,9 +1379,9 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '💳 Pilih Pinjaman Untuk Dibayar',
-                      style: TextStyle(
+                    Text(
+                      '💳 Bayar Pinjaman (${_nasabah.nama})',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1385,6 +1391,63 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                       icon: const Icon(Icons.close, color: Colors.white54),
                       onPressed: () => Navigator.pop(ctx),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // TOMBOL UTAMA: BAYAR SEKALIGUS SEMUA PINJAMAN
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BayarScreen(
+                            transaksi: activeLoans.first,
+                            isGabungan: true,
+                          ),
+                        ),
+                      );
+                      _loadTransaksi();
+                    },
+                    icon: const Icon(Icons.flash_on_rounded,
+                        color: Colors.black, size: 20),
+                    label: Text(
+                      '⚡ BAYAR SEKALIGUS (${formatRupiah(totalHutang)})',
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: Colors.white24)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        'Atau bayar per-pinjaman:',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider(color: Colors.white24)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1416,7 +1479,10 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => BayarScreen(transaksi: t),
+                              builder: (_) => BayarScreen(
+                                transaksi: t,
+                                isGabungan: false,
+                              ),
                             ),
                           );
                           _loadTransaksi();
