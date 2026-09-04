@@ -978,7 +978,10 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+
+              // Ringkasan Total Hutang & Akses Bayar Langsung
+              _buildSummaryCard(),
 
               // Status Indicator
               if (!hasActiveTransaksi && _transaksiList.isNotEmpty) ...[
@@ -1058,7 +1061,7 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
 
   Widget _buildTransaksiCard(Transaksi transaksi) {
     final isLunas = transaksi.status == 'lunas';
-    final isHutang = transaksi.status == 'sebagian';
+    final isHutang = !isLunas && (transaksi.status == 'sebagian' || (transaksi.status == 'aktif' && transaksi.sisaHutang > 0));
     final cardColor = isLunas
         ? const Color(0xFF4CAF50)
         : isHutang
@@ -1127,7 +1130,33 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                     ),
                     if (isLunas)
                       const Icon(Icons.check_circle,
-                          color: Color(0xFF4CAF50), size: 22),
+                          color: Color(0xFF4CAF50), size: 22)
+                    else
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BayarScreen(transaksi: transaksi),
+                            ),
+                          );
+                          _loadTransaksi();
+                        },
+                        icon: const Icon(Icons.payment, size: 14),
+                        label: const Text('Bayar',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1139,7 +1168,7 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
                     _buildDetailCol(
                         'Total Bayar', formatRupiah(transaksi.totalHarusBayar)),
                     _buildDetailCol(
-                      isHutang ? 'Sisa' : 'Keuntungan',
+                      isHutang ? 'Sisa Hutang' : 'Keuntungan',
                       isHutang
                           ? formatRupiah(transaksi.sisaHutang)
                           : formatRupiah(transaksi.biayaAdmin),
@@ -1164,6 +1193,275 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    final activeLoans =
+        _transaksiList.where((t) => t.status != 'lunas').toList();
+    final double totalSisaHutang =
+        activeLoans.fold(0.0, (sum, t) => sum + t.sisaHutang);
+    final double totalPinjamanAll =
+        _transaksiList.fold(0.0, (sum, t) => sum + t.nominalPinjaman);
+    final double totalKeuntunganAll =
+        _transaksiList.fold(0.0, (sum, t) => sum + t.biayaAdmin);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: totalSisaHutang > 0
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [const Color(0xFF14281E), const Color(0xFF0A1912)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: totalSisaHutang > 0
+              ? const Color(0xFFD4AF37).withOpacity(0.4)
+              : const Color(0xFF4CAF50).withOpacity(0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: totalSisaHutang > 0
+                ? const Color(0xFFD4AF37).withOpacity(0.08)
+                : const Color(0xFF4CAF50).withOpacity(0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: totalSisaHutang > 0
+                            ? const Color(0xFFFF9800).withOpacity(0.2)
+                            : const Color(0xFF4CAF50).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        totalSisaHutang > 0
+                            ? Icons.account_balance_wallet_rounded
+                            : Icons.verified_user_rounded,
+                        color: totalSisaHutang > 0
+                            ? const Color(0xFFFF9800)
+                            : const Color(0xFF4CAF50),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'TOTAL SISA HUTANG AKTIF',
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            formatRupiah(totalSisaHutang),
+                            style: TextStyle(
+                              color: totalSisaHutang > 0
+                                  ? const Color(0xFFFF5252)
+                                  : const Color(0xFF4CAF50),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (totalSisaHutang > 0)
+                ElevatedButton.icon(
+                  onPressed: () => _payActiveLoans(activeLoans),
+                  icon: const Icon(Icons.payment_rounded, size: 15),
+                  label: const Text(
+                    'Bayar Sekarang',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Colors.white12),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatItem('Total Pinjaman', formatRupiah(totalPinjamanAll)),
+              _buildStatItem(
+                  'Total Keuntungan', formatRupiah(totalKeuntunganAll),
+                  color: const Color(0xFF4CAF50)),
+              _buildStatItem(
+                'Pinjaman Aktif',
+                '${activeLoans.length} Transaksi',
+                color: activeLoans.isNotEmpty
+                    ? const Color(0xFFFFB300)
+                    : Colors.white70,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _payActiveLoans(List<Transaksi> activeLoans) async {
+    if (activeLoans.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada pinjaman aktif. Semua sudah LUNAS! 🎉'),
+          backgroundColor: Color(0xFF4CAF50),
+        ),
+      );
+      return;
+    }
+
+    if (activeLoans.length == 1) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BayarScreen(transaksi: activeLoans.first),
+        ),
+      );
+      _loadTransaksi();
+    } else {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1E293B),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (ctx) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '💳 Pilih Pinjaman Untuk Dibayar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...activeLoans.map((t) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        'Pinjaman ${formatRupiah(t.nominalPinjaman)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Tgl: ${formatTanggal(t.tanggalPinjam)} • Sisa: ${formatRupiah(t.sisaHutang)}',
+                        style: const TextStyle(
+                            color: Colors.white60, fontSize: 12),
+                      ),
+                      trailing: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BayarScreen(transaksi: t),
+                            ),
+                          );
+                          _loadTransaksi();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Bayar'),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  Widget _buildStatItem(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.white.withOpacity(0.4),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.bold,
+            color: color ?? Colors.white,
+          ),
+        ),
+      ],
     );
   }
 
