@@ -6,6 +6,7 @@ import '../providers/app_provider.dart';
 import '../models/transaksi.dart';
 import '../models/nasabah.dart';
 import '../widgets/confirm_dialog.dart';
+import '../utils/rupiah_formatter.dart';
 
 class TransaksiScreen extends StatefulWidget {
   const TransaksiScreen({super.key});
@@ -586,7 +587,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                   label: 'Nominal Pinjaman (Rp)',
                   icon: Icons.monetization_on_outlined,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: [RupiahInputFormatter()],
                   onChanged: (_) => _hitungBiaya(),
                   validator: (v) =>
                       v!.isEmpty ? 'Nominal harus diisi' : null,

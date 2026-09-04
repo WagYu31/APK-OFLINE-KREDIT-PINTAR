@@ -6,6 +6,7 @@ import '../providers/app_provider.dart';
 import '../models/settings.dart';
 import '../widgets/confirm_dialog.dart';
 import '../services/token_service.dart';
+import '../utils/rupiah_formatter.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -30,18 +31,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _syncControllers(AppProvider provider) {
+    final formatter = NumberFormat('#,###', 'id_ID');
     if (provider.settings.modalAwal > 0) {
       _modalController.text =
-          provider.settings.modalAwal.toInt().toString();
+          formatter.format(provider.settings.modalAwal.toInt());
     }
     if (provider.settings.targetKeuntungan > 0) {
       _targetController.text =
-          provider.settings.targetKeuntungan.toInt().toString();
+          formatter.format(provider.settings.targetKeuntungan.toInt());
     }
     final adminRate = provider.settings.biayaAdminPerKelipatan > 0
         ? provider.settings.biayaAdminPerKelipatan
         : 25000.0;
-    _biayaAdminController.text = adminRate.toInt().toString();
+    _biayaAdminController.text = formatter.format(adminRate.toInt());
   }
 
   @override
@@ -241,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextFormField(
                     controller: _modalController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [RupiahInputFormatter()],
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -314,7 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextFormField(
                     controller: _targetController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [RupiahInputFormatter()],
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -392,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextFormField(
                     controller: _biayaAdminController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [RupiahInputFormatter()],
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,

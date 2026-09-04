@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
 import '../models/transaksi.dart';
 import '../widgets/confirm_dialog.dart';
+import '../utils/rupiah_formatter.dart';
 
 class BayarScreen extends StatefulWidget {
   final Transaksi transaksi;
@@ -46,6 +47,11 @@ class _BayarScreenState extends State<BayarScreen> {
               NumberFormat('#,###', 'id_ID').format(totalHutang.toInt());
         }
       });
+    } else {
+      if (widget.transaksi.sisaHutang > 0) {
+        _nominalController.text =
+            NumberFormat('#,###', 'id_ID').format(widget.transaksi.sisaHutang.toInt());
+      }
     }
   }
 
@@ -478,7 +484,7 @@ class _BayarScreenState extends State<BayarScreen> {
               TextFormField(
                 controller: _nominalController,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                inputFormatters: [RupiahInputFormatter()],
                 style: const TextStyle(color: Colors.white, fontSize: 18),
                 decoration: InputDecoration(
                   labelText: 'Nominal Pembayaran (Rp)',
