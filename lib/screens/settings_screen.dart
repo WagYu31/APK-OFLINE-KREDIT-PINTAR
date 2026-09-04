@@ -132,6 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<AppProvider>(context);
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: widget.isFirstTime
@@ -467,7 +468,110 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Banner System Cadangan Otomatis
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.shield_rounded,
+                                color: Color(0xFF4CAF50), size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Pencadangan Otomatis: AKTIF 🟢',
+                                style: TextStyle(
+                                  color: Color(0xFF4CAF50),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Sistem otomatis menyimpan cadangan data setiap kali ada transaksi/nasabah baru. Jika HP ter-reset atau aplikasi diinstall ulang, data akan otomatis pulih!',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 11.5,
+                          ),
+                        ),
+                        if (provider.lastAutoBackupTime != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            '🕒 Terakhir Cadangkan: ${provider.lastAutoBackupTime}',
+                            style: const TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final restored =
+                                  await provider.checkAndRestoreAutoBackup();
+                              if (context.mounted) {
+                                if (restored) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'Data Berhasil Dipulihkan dari Auto-Backup Terbaru! 🎉'),
+                                      backgroundColor: const Color(0xFF4CAF50),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'Tidak ada file Auto-Backup atau data sudah up to date.'),
+                                      backgroundColor: const Color(0xFFFF9800),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon:
+                                const Icon(Icons.autorenew_rounded, size: 16),
+                            label: const Text(
+                                'Pulihkan dari Auto-Backup Terbaru',
+                                style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF4CAF50),
+                              side: const BorderSide(color: Color(0xFF4CAF50)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   // Button 1: Cadangkan Data (Ekspor)
                   SizedBox(
                     width: double.infinity,

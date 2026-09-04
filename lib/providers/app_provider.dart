@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -37,6 +38,9 @@ class AppProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   int get activeTabIndex => _activeTabIndex;
 
+  String? _lastAutoBackupTime;
+  String? get lastAutoBackupTime => _lastAutoBackupTime;
+
   void switchTab(int index) {
     _activeTabIndex = index;
     notifyListeners();
@@ -49,6 +53,13 @@ class AppProvider extends ChangeNotifier {
     _settings = await _db.getSettings();
     await refreshData();
 
+    // Auto-restore check if database is completely empty
+    if (_allNasabah.isEmpty && _allTransaksi.isEmpty) {
+      await checkAndRestoreAutoBackup();
+    } else {
+      await triggerAutoBackup();
+    }
+
     _isLoading = false;
     notifyListeners();
   }
@@ -59,7 +70,55 @@ class AppProvider extends ChangeNotifier {
     _transaksiJatuhTempo = await _db.getTransaksiJatuhTempo();
     _transaksiHutang = await _db.getTransaksiPunyaHutang();
     _statistik = await _db.getStatistik();
+
+    if (_allNasabah.isNotEmpty || _allTransaksi.isNotEmpty) {
+      await triggerAutoBackup();
+    }
     notifyListeners();
+  }
+
+  /// Automatically run offline backup to internal app storage
+  Future<void> triggerAutoBackup() async {
+    try {
+      final data = await _db.exportBackupJson();
+      final jsonStr = jsonEncode(data);
+
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/Sukron08_AutoBackup_latest.json';
+      final file = File(filePath);
+      await file.writeAsString(jsonStr);
+
+      _lastAutoBackupTime =
+          DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.now());
+      notifyListeners();
+    } catch (e) {
+      debugPrint('AutoBackup error: $e');
+    }
+  }
+
+  /// Automatically check and restore from auto-backup if DB is empty
+  Future<bool> checkAndRestoreAutoBackup() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/Sukron08_AutoBackup_latest.json';
+      final file = File(filePath);
+
+      if (await file.exists()) {
+        final jsonStr = await file.readAsString();
+        final Map<String, dynamic> data = jsonDecode(jsonStr);
+        final success = await _db.importBackupJson(data);
+        if (success) {
+          await refreshData();
+          _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+              .format(DateTime.now());
+          notifyListeners();
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('AutoRestore error: $e');
+    }
+    return false;
   }
 
   void setSearchQuery(String query) {
