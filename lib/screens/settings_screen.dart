@@ -26,6 +26,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final provider = Provider.of<AppProvider>(context, listen: false);
+    _syncControllers(provider);
+  }
+
+  void _syncControllers(AppProvider provider) {
     if (provider.settings.modalAwal > 0) {
       _modalController.text =
           provider.settings.modalAwal.toInt().toString();
@@ -133,6 +137,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AppProvider>(context);
+    if (_modalController.text.isEmpty && provider.settings.modalAwal > 0) {
+      _syncControllers(provider);
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: widget.isFirstTime
@@ -528,6 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               final restored =
                                   await provider.checkAndRestoreAutoBackup();
                               if (context.mounted) {
+                                _syncControllers(provider);
                                 if (restored) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -616,6 +624,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final success = await provider.importBackupFromFile();
                         if (context.mounted) {
                           if (success) {
+                            _syncControllers(provider);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text(

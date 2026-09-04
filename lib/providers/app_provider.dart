@@ -73,6 +73,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> refreshData() async {
+    _settings = await _db.getSettings();
     _allNasabah = await _db.getAllNasabah();
     _allTransaksi = await _db.getAllTransaksi();
     _transaksiJatuhTempo = await _db.getTransaksiJatuhTempo();
@@ -113,11 +114,7 @@ class AppProvider extends ChangeNotifier {
         final Map<String, dynamic> data = jsonDecode(jsonStr);
         final success = await _db.importBackupJson(data);
         if (success) {
-          _allNasabah = await _db.getAllNasabah();
-          _allTransaksi = await _db.getAllTransaksi();
-          _transaksiJatuhTempo = await _db.getTransaksiJatuhTempo();
-          _transaksiHutang = await _db.getTransaksiPunyaHutang();
-          _statistik = await _db.getStatistik();
+          await refreshData();
           _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
               .format(await file.lastModified());
           notifyListeners();
