@@ -1365,136 +1365,240 @@ class _NasabahDetailScreenState extends State<NasabahDetailScreen> {
     } else {
       showModalBottomSheet(
         context: context,
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF0F172A),
+        isScrollControlled: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         builder: (ctx) {
           return Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '💳 Bayar Pinjaman (${_nasabah.nama})',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_wallet_rounded,
+                            color: Color(0xFFD4AF37),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Bayar Pinjaman (${_nasabah.nama})',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
+                      icon: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.5)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 // TOMBOL UTAMA: BAYAR SEKALIGUS SEMUA PINJAMAN
-                SizedBox(
+                Container(
                   width: double.infinity,
                   height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BayarScreen(
-                            transaksi: activeLoans.first,
-                            isGabungan: true,
-                          ),
-                        ),
-                      );
-                      _loadTransaksi();
-                    },
-                    icon: const Icon(Icons.flash_on_rounded,
-                        color: Colors.black, size: 20),
-                    label: Text(
-                      '⚡ BAYAR SEKALIGUS (${formatRupiah(totalHutang)})',
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                      elevation: 4,
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BayarScreen(
+                              transaksi: activeLoans.first,
+                              isGabungan: true,
+                            ),
+                          ),
+                        );
+                        _loadTransaksi();
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.black87,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'BAYAR SEKALIGUS (${formatRupiah(totalHutang)})',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 Row(
                   children: [
-                    const Expanded(child: Divider(color: Colors.white24)),
+                    Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         'Atau bayar per-pinjaman:',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.45),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                    const Expanded(child: Divider(color: Colors.white24)),
+                    Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 ...activeLoans.map((t) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
+                    margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                     ),
-                    child: ListTile(
-                      title: Text(
-                        'Pinjaman ${formatRupiah(t.nominalPinjaman)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Tgl: ${formatTanggal(t.tanggalPinjam)} • Sisa: ${formatRupiah(t.sisaHutang)}',
-                        style: const TextStyle(
-                            color: Colors.white60, fontSize: 12),
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BayarScreen(
-                                transaksi: t,
-                                isGabungan: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pinjaman ${formatRupiah(t.nominalPinjaman)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Tgl: ${formatTanggal(t.tanggalPinjam)}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.5),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.3),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Sisa: ${formatRupiah(t.sisaHutang)}',
+                                      style: const TextStyle(
+                                        color: Color(0xFFEF4444),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BayarScreen(
+                                    transaksi: t,
+                                    isGabungan: false,
+                                  ),
+                                ),
+                              );
+                              _loadTransaksi();
+                            },
+                            icon: const Icon(Icons.payments_rounded, size: 14),
+                            label: const Text(
+                              'Bayar',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                          _loadTransaksi();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              elevation: 2,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text('Bayar'),
+                        ],
                       ),
                     ),
                   );
