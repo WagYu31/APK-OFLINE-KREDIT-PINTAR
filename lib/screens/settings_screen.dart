@@ -544,8 +544,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: const Text(
-                                          'Tidak ada file Auto-Backup atau data sudah up to date.'),
-                                      backgroundColor: const Color(0xFFFF9800),
+                                          'File cadangan otomatis dibuat! Data di aplikasi sudah paling terbaru. ✅'),
+                                      backgroundColor: const Color(0xFF4CAF50),
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
                                           borderRadius:

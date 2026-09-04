@@ -54,11 +54,19 @@ class AppProvider extends ChangeNotifier {
     await refreshData();
 
     // Auto-restore check if database is completely empty
-    if (_allNasabah.isEmpty && _allTransaksi.isEmpty) {
-      await checkAndRestoreAutoBackup();
-    } else {
-      await triggerAutoBackup();
+    final dir = await getApplicationDocumentsDirectory();
+    final autoBackupFile = File('${dir.path}/Sukron08_AutoBackup_latest.json');
+
+    if (await autoBackupFile.exists()) {
+      _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+          .format(await autoBackupFile.lastModified());
+      if (_allNasabah.isEmpty && _allTransaksi.isEmpty) {
+        await checkAndRestoreAutoBackup();
+      }
     }
+
+    // Always trigger auto-backup once initialized
+    await triggerAutoBackup();
 
     _isLoading = false;
     notifyListeners();
@@ -71,9 +79,7 @@ class AppProvider extends ChangeNotifier {
     _transaksiHutang = await _db.getTransaksiPunyaHutang();
     _statistik = await _db.getStatistik();
 
-    if (_allNasabah.isNotEmpty || _allTransaksi.isNotEmpty) {
-      await triggerAutoBackup();
-    }
+    await triggerAutoBackup();
     notifyListeners();
   }
 
@@ -90,13 +96,12 @@ class AppProvider extends ChangeNotifier {
 
       _lastAutoBackupTime =
           DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.now());
-      notifyListeners();
     } catch (e) {
       debugPrint('AutoBackup error: $e');
     }
   }
 
-  /// Automatically check and restore from auto-backup if DB is empty
+  /// Automatically check and restore from auto-backup if DB is empty or user requested
   Future<bool> checkAndRestoreAutoBackup() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
@@ -108,12 +113,19 @@ class AppProvider extends ChangeNotifier {
         final Map<String, dynamic> data = jsonDecode(jsonStr);
         final success = await _db.importBackupJson(data);
         if (success) {
-          await refreshData();
+          _allNasabah = await _db.getAllNasabah();
+          _allTransaksi = await _db.getAllTransaksi();
+          _transaksiJatuhTempo = await _db.getTransaksiJatuhTempo();
+          _transaksiHutang = await _db.getTransaksiPunyaHutang();
+          _statistik = await _db.getStatistik();
           _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
-              .format(DateTime.now());
+              .format(await file.lastModified());
           notifyListeners();
           return true;
         }
+      } else {
+        // If file doesn't exist yet, create it now from current database
+        await triggerAutoBackup();
       }
     } catch (e) {
       debugPrint('AutoRestore error: $e');
