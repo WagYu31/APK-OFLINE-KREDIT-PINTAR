@@ -192,6 +192,16 @@ class _BayarScreenState extends State<BayarScreen> {
     final totalSisaHutangGabungan = allActiveForNasabah.fold(
         0.0, (sum, t) => sum + t.sisaHutang);
 
+    if (_nominalController.text.isEmpty) {
+      final defaultAmount = widget.isGabungan
+          ? totalSisaHutangGabungan
+          : widget.transaksi.sisaHutang;
+      if (defaultAmount > 0) {
+        _nominalController.text =
+            NumberFormat('#,###', 'id_ID').format(defaultAmount.toInt());
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: AppBar(

@@ -772,6 +772,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           MaterialPageRoute(
                             builder: (_) => BayarScreen(
                               transaksi: item.transaksiList.first,
+                              isGabungan: true,
                             ),
                           ),
                         );
