@@ -23,7 +23,7 @@ class DbHelper {
 
     return openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE settings (
@@ -31,6 +31,7 @@ class DbHelper {
             modalAwal REAL DEFAULT 0,
             targetKeuntungan REAL DEFAULT 0,
             biayaAdminPerKelipatan REAL DEFAULT 25000,
+            autoBackupIntervalDays INTEGER DEFAULT 0,
             tahunAktif INTEGER,
             createdAt TEXT
           )
@@ -160,6 +161,14 @@ class DbHelper {
           try {
             await db.execute(
               'ALTER TABLE tutup_buku ADD COLUMN targetKeuntungan REAL DEFAULT 0'
+            );
+          } catch (_) {}
+        }
+
+        if (oldVersion < 7) {
+          try {
+            await db.execute(
+              'ALTER TABLE settings ADD COLUMN autoBackupIntervalDays INTEGER DEFAULT 0'
             );
           } catch (_) {}
         }

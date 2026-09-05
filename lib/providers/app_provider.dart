@@ -80,8 +80,41 @@ class AppProvider extends ChangeNotifier {
     _transaksiHutang = await _db.getTransaksiPunyaHutang();
     _statistik = await _db.getStatistik();
 
-    await triggerAutoBackup();
+    await checkAndRunScheduledAutoBackup();
     notifyListeners();
+  }
+
+  /// Automatically run offline backup based on scheduled interval setting
+  Future<void> checkAndRunScheduledAutoBackup() async {
+    final interval = _settings.autoBackupIntervalDays;
+    
+    // Jika 0 (Realtime), langsung simpan cadangan terbaru
+    if (interval <= 0) {
+      await triggerAutoBackup();
+      return;
+    }
+
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/Sukron08_AutoBackup_latest.json');
+
+      if (!await file.exists()) {
+        await triggerAutoBackup();
+        return;
+      }
+
+      final lastModified = await file.lastModified();
+      final diffDays = DateTime.now().difference(lastModified).inDays;
+
+      if (diffDays >= interval) {
+        await triggerAutoBackup();
+      } else {
+        _lastAutoBackupTime =
+            DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(lastModified);
+      }
+    } catch (e) {
+      debugPrint('Scheduled AutoBackup error: $e');
+    }
   }
 
   /// Automatically run offline backup to internal app storage

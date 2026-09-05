@@ -101,6 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         modalAwal: modal,
         targetKeuntungan: target,
         biayaAdminPerKelipatan: adminRate > 0 ? adminRate : 25000,
+        autoBackupIntervalDays: provider.settings.autoBackupIntervalDays,
         tahunAktif: DateTime.now().year,
       );
       await provider.saveSettings(settings);
@@ -512,11 +513,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Sistem otomatis menyimpan cadangan data setiap kali ada transaksi/nasabah baru. Jika HP ter-reset atau aplikasi diinstall ulang, data akan otomatis pulih!',
+                          'Sistem otomatis menyimpan cadangan data ke memori internal HP. Jika HP ter-reset atau aplikasi diinstall ulang, data dapat dipulihkan!',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.7),
                             fontSize: 11.5,
                           ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(color: Colors.white12, height: 1),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '📅 Interval Cadangan:',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: const Color(0xFF4CAF50).withOpacity(0.4)),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<int>(
+                                  value: provider.settings.autoBackupIntervalDays,
+                                  dropdownColor: const Color(0xFF1E293B),
+                                  style: const TextStyle(
+                                    color: Color(0xFF4CAF50),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  icon: const Icon(Icons.arrow_drop_down,
+                                      color: Color(0xFF4CAF50), size: 18),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 0,
+                                      child: Text('⚡ Realtime (Setiap Ubah Data)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text('📅 Setiap 1 Hari'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 3,
+                                      child: Text('📅 Setiap 3 Hari'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 7,
+                                      child: Text('📅 Setiap 7 Hari (Mingguan)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 30,
+                                      child: Text('📅 Setiap 30 Hari (Bulanan)'),
+                                    ),
+                                  ],
+                                  onChanged: (val) async {
+                                    if (val != null) {
+                                      final s = provider.settings;
+                                      s.autoBackupIntervalDays = val;
+                                      await provider.saveSettings(s);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(val == 0
+                                                ? 'Jadwal Cadangan diubah ke Realtime! ⚡'
+                                                : 'Jadwal Cadangan diubah ke Setiap $val Hari! 📅'),
+                                            backgroundColor: const Color(0xFF4CAF50),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         if (provider.lastAutoBackupTime != null) ...[
                           const SizedBox(height: 8),
