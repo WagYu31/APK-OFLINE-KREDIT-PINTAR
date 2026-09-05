@@ -523,7 +523,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Divider(color: Colors.white12, height: 1),
                         const SizedBox(height: 10),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               '📅 Interval Cadangan:',
@@ -533,67 +532,86 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                    color: const Color(0xFF4CAF50).withOpacity(0.4)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<int>(
-                                  value: provider.settings.autoBackupIntervalDays,
-                                  dropdownColor: const Color(0xFF1E293B),
-                                  style: const TextStyle(
-                                    color: Color(0xFF4CAF50),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  icon: const Icon(Icons.arrow_drop_down,
-                                      color: Color(0xFF4CAF50), size: 18),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 0,
-                                      child: Text('⚡ Realtime (Setiap Ubah Data)'),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: const Color(0xFF4CAF50).withOpacity(0.4)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<int>(
+                                    isExpanded: true,
+                                    value: provider.settings.autoBackupIntervalDays,
+                                    dropdownColor: const Color(0xFF1E293B),
+                                    style: const TextStyle(
+                                      color: Color(0xFF4CAF50),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    DropdownMenuItem(
-                                      value: 1,
-                                      child: Text('📅 Setiap 1 Hari'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 3,
-                                      child: Text('📅 Setiap 3 Hari'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 7,
-                                      child: Text('📅 Setiap 7 Hari (Mingguan)'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 30,
-                                      child: Text('📅 Setiap 30 Hari (Bulanan)'),
-                                    ),
-                                  ],
-                                  onChanged: (val) async {
-                                    if (val != null) {
-                                      final s = provider.settings;
-                                      s.autoBackupIntervalDays = val;
-                                      await provider.saveSettings(s);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(val == 0
-                                                ? 'Jadwal Cadangan diubah ke Realtime! ⚡'
-                                                : 'Jadwal Cadangan diubah ke Setiap $val Hari! 📅'),
-                                            backgroundColor: const Color(0xFF4CAF50),
-                                            behavior: SnackBarBehavior.floating,
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12)),
-                                          ),
-                                        );
+                                    icon: const Icon(Icons.arrow_drop_down,
+                                        color: Color(0xFF4CAF50), size: 18),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 0,
+                                        child: Text(
+                                          '⚡ Realtime (Setiap Ubah)',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 1,
+                                        child: Text(
+                                          '📅 Setiap 1 Hari',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 3,
+                                        child: Text(
+                                          '📅 Setiap 3 Hari',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 7,
+                                        child: Text(
+                                          '📅 Setiap 7 Hari (Mingguan)',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 30,
+                                        child: Text(
+                                          '📅 Setiap 30 Hari (Bulanan)',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (val) async {
+                                      if (val != null) {
+                                        final s = provider.settings;
+                                        s.autoBackupIntervalDays = val;
+                                        await provider.saveSettings(s);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(val == 0
+                                                  ? 'Jadwal Cadangan diubah ke Realtime! ⚡'
+                                                  : 'Jadwal Cadangan diubah ke Setiap $val Hari! 📅'),
+                                              backgroundColor: const Color(0xFF4CAF50),
+                                              behavior: SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(12)),
+                                            ),
+                                          );
+                                        }
                                       }
-                                    }
-                                  },
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
