@@ -117,16 +117,38 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// Automatically run offline backup to internal app storage
+  /// Automatically run offline backup to internal app storage and public Download folder
   Future<void> triggerAutoBackup() async {
     try {
       final data = await _db.exportBackupJson();
       final jsonStr = jsonEncode(data);
 
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = '${dir.path}/Sukron08_AutoBackup_latest.json';
-      final file = File(filePath);
-      await file.writeAsString(jsonStr);
+      // 1. Internal App Directory (Fallback)
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/Sukron08_AutoBackup_latest.json');
+        await file.writeAsString(jsonStr);
+      } catch (e) {
+        debugPrint('Internal AutoBackup write error: $e');
+      }
+
+      // 2. Public Download Folder (/storage/emulated/0/Download/)
+      try {
+        final downloadFile = File('/storage/emulated/0/Download/KreditPintar_AutoBackup_latest.json');
+        await downloadFile.writeAsString(jsonStr);
+        debugPrint('AutoBackup saved to public Download folder: ${downloadFile.path}');
+      } catch (e) {
+        debugPrint('Public Download folder write error: $e');
+      }
+
+      // 3. System Downloads Directory if available
+      try {
+        final sysDownloadDir = await getDownloadsDirectory();
+        if (sysDownloadDir != null) {
+          final file = File('${sysDownloadDir.path}/KreditPintar_AutoBackup_latest.json');
+          await file.writeAsString(jsonStr);
+        }
+      } catch (_) {}
 
       _lastAutoBackupTime =
           DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.now());
@@ -135,28 +157,43 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  /// Automatically check and restore from auto-backup if DB is empty or user requested
+  /// Automatically check and restore from auto-backup (from public Download folder or internal storage)
   Future<bool> checkAndRestoreAutoBackup() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = '${dir.path}/Sukron08_AutoBackup_latest.json';
-      final file = File(filePath);
+      // List of candidate file locations in order of priority (Public Download first, then Internal)
+      List<File> candidateFiles = [
+        File('/storage/emulated/0/Download/KreditPintar_AutoBackup_latest.json'),
+      ];
 
-      if (await file.exists()) {
-        final jsonStr = await file.readAsString();
-        final Map<String, dynamic> data = jsonDecode(jsonStr);
-        final success = await _db.importBackupJson(data);
-        if (success) {
-          await refreshData();
-          _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
-              .format(await file.lastModified());
-          notifyListeners();
-          return true;
+      try {
+        final sysDir = await getDownloadsDirectory();
+        if (sysDir != null) {
+          candidateFiles.add(File('${sysDir.path}/KreditPintar_AutoBackup_latest.json'));
         }
-      } else {
-        // If file doesn't exist yet, create it now from current database
-        await triggerAutoBackup();
+      } catch (_) {}
+
+      try {
+        final internalDir = await getApplicationDocumentsDirectory();
+        candidateFiles.add(File('${internalDir.path}/Sukron08_AutoBackup_latest.json'));
+      } catch (_) {}
+
+      for (final file in candidateFiles) {
+        if (await file.exists()) {
+          final jsonStr = await file.readAsString();
+          final Map<String, dynamic> data = jsonDecode(jsonStr);
+          final success = await _db.importBackupJson(data);
+          if (success) {
+            await refreshData();
+            _lastAutoBackupTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                .format(await file.lastModified());
+            notifyListeners();
+            return true;
+          }
+        }
       }
+
+      // If no candidate file exists yet, create it now from current database
+      await triggerAutoBackup();
     } catch (e) {
       debugPrint('AutoRestore error: $e');
     }

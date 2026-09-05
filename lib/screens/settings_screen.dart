@@ -513,7 +513,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Sistem otomatis menyimpan cadangan data ke memori internal HP. Jika HP ter-reset atau aplikasi diinstall ulang, data dapat dipulihkan!',
+                          'Sistem otomatis menyimpan cadangan data langsung ke Folder Download HP (KreditPintar_AutoBackup_latest.json). Meskipun aplikasi terhapus, file cadangan tetap tersimpan aman di HP Anda!',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.7),
                             fontSize: 11.5,
