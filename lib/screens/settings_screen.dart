@@ -629,54 +629,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ],
                         const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final restored =
-                                  await provider.checkAndRestoreAutoBackup();
-                              if (context.mounted) {
-                                _syncControllers(provider);
-                                if (restored) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'Data Berhasil Dipulihkan dari Auto-Backup Terbaru! 🎉'),
-                                      backgroundColor: const Color(0xFF4CAF50),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12)),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'File cadangan otomatis dibuat! Data di aplikasi sudah paling terbaru. ✅'),
-                                      backgroundColor: const Color(0xFF4CAF50),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12)),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            icon:
-                                const Icon(Icons.autorenew_rounded, size: 16),
-                            label: const Text(
-                                'Pulihkan dari Auto-Backup Terbaru',
-                                style: TextStyle(fontSize: 12)),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF4CAF50),
-                              side: const BorderSide(color: Color(0xFF4CAF50)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final path = await provider.downloadBackupNow();
+                                  if (context.mounted && path != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                            'File cadangan diunduh & siap disimpan di HP! 📁'),
+                                        backgroundColor: const Color(0xFF4CAF50),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.downloading_rounded, size: 16),
+                                label: const Text(
+                                  'Unduh File Backup',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF42A5F5),
+                                  side: const BorderSide(color: Color(0xFF42A5F5)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final restored =
+                                      await provider.checkAndRestoreAutoBackup();
+                                  if (context.mounted) {
+                                    _syncControllers(provider);
+                                    if (restored) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                              'Data Berhasil Dipulihkan dari Auto-Backup Terbaru! 🎉'),
+                                          backgroundColor: const Color(0xFF4CAF50),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                              'File cadangan otomatis dibuat! Data di aplikasi sudah paling terbaru. ✅'),
+                                          backgroundColor: const Color(0xFF4CAF50),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.autorenew_rounded, size: 16),
+                                label: const Text(
+                                  'Pulihkan Data',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF4CAF50),
+                                  side: const BorderSide(color: Color(0xFF4CAF50)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

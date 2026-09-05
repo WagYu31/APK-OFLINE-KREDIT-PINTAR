@@ -123,37 +123,72 @@ class AppProvider extends ChangeNotifier {
       final data = await _db.exportBackupJson();
       final jsonStr = jsonEncode(data);
 
-      // 1. Internal App Directory (Fallback)
-      try {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/Sukron08_AutoBackup_latest.json');
-        await file.writeAsString(jsonStr);
-      } catch (e) {
-        debugPrint('Internal AutoBackup write error: $e');
-      }
+      final List<String> paths = [
+        '/storage/emulated/0/Download/KreditPintar_AutoBackup_latest.json',
+        '/storage/emulated/0/Download/Sukron08_AutoBackup_latest.json',
+        '/sdcard/Download/KreditPintar_AutoBackup_latest.json',
+      ];
 
-      // 2. Public Download Folder (/storage/emulated/0/Download/)
       try {
-        final downloadFile = File('/storage/emulated/0/Download/KreditPintar_AutoBackup_latest.json');
-        await downloadFile.writeAsString(jsonStr);
-        debugPrint('AutoBackup saved to public Download folder: ${downloadFile.path}');
-      } catch (e) {
-        debugPrint('Public Download folder write error: $e');
-      }
+        final internalDir = await getApplicationDocumentsDirectory();
+        paths.add('${internalDir.path}/Sukron08_AutoBackup_latest.json');
+        paths.add('${internalDir.path}/KreditPintar_AutoBackup_latest.json');
+      } catch (_) {}
 
-      // 3. System Downloads Directory if available
+      try {
+        final extDir = await getExternalStorageDirectory();
+        if (extDir != null) {
+          paths.add('${extDir.path}/KreditPintar_AutoBackup_latest.json');
+        }
+      } catch (_) {}
+
       try {
         final sysDownloadDir = await getDownloadsDirectory();
         if (sysDownloadDir != null) {
-          final file = File('${sysDownloadDir.path}/KreditPintar_AutoBackup_latest.json');
-          await file.writeAsString(jsonStr);
+          paths.add('${sysDownloadDir.path}/KreditPintar_AutoBackup_latest.json');
         }
       } catch (_) {}
+
+      for (final p in paths) {
+        try {
+          final file = File(p);
+          if (!file.parent.existsSync()) {
+            file.parent.createSync(recursive: true);
+          }
+          await file.writeAsString(jsonStr);
+          debugPrint('AutoBackup saved to: $p');
+        } catch (e) {
+          debugPrint('Write error for $p: $e');
+        }
+      }
 
       _lastAutoBackupTime =
           DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.now());
     } catch (e) {
       debugPrint('AutoBackup error: $e');
+    }
+  }
+
+  /// Manually force download/save backup file to user's device
+  Future<String?> downloadBackupNow() async {
+    try {
+      await triggerAutoBackup();
+      final data = await _db.exportBackupJson();
+      final jsonStr = jsonEncode(data);
+
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/KreditPintar_AutoBackup_latest.json';
+      final file = File(filePath);
+      await file.writeAsString(jsonStr);
+
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: 'File Cadangan Data Aplikasi Kredit Pintar (Format JSON)',
+      );
+      return filePath;
+    } catch (e) {
+      debugPrint('Download backup error: $e');
+      return null;
     }
   }
 
