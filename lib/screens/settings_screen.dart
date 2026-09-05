@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/backup_info_dialog.dart';
 import '../services/token_service.dart';
 import '../utils/rupiah_formatter.dart';
 
@@ -494,12 +495,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.shield_rounded,
+                            const Icon(Icons.shield_rounded,
                                 color: Color(0xFF4CAF50), size: 20),
-                            SizedBox(width: 8),
-                            Expanded(
+                            const SizedBox(width: 8),
+                            const Expanded(
                               child: Text(
                                 'Pencadangan Otomatis: AKTIF 🟢',
                                 style: TextStyle(
@@ -508,6 +509,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   fontSize: 13,
                                 ),
                               ),
+                            ),
+                            IconButton(
+                              onPressed: () => BackupInfoDialog.show(context),
+                              icon: const Icon(Icons.info_outline_rounded,
+                                  color: Color(0xFF42A5F5), size: 20),
+                              tooltip: 'Info Lokasi File',
                             ),
                           ],
                         ),
@@ -635,18 +642,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: OutlinedButton.icon(
                                 onPressed: () async {
                                   final path = await provider.downloadBackupNow();
-                                  if (context.mounted && path != null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                            'File cadangan diunduh & siap disimpan di HP! 📁'),
-                                        backgroundColor: const Color(0xFF4CAF50),
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12)),
-                                      ),
-                                    );
+                                  if (context.mounted) {
+                                    await BackupInfoDialog.show(context, filePath: path);
                                   }
                                 },
                                 icon: const Icon(Icons.downloading_rounded, size: 16),
@@ -672,17 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   if (context.mounted) {
                                     _syncControllers(provider);
                                     if (restored) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Text(
-                                              'Data Berhasil Dipulihkan dari Auto-Backup Terbaru! 🎉'),
-                                          backgroundColor: const Color(0xFF4CAF50),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12)),
-                                        ),
-                                      );
+                                      await BackupInfoDialog.show(context, filePath: 'Auto-Backup (Terbaru)');
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
