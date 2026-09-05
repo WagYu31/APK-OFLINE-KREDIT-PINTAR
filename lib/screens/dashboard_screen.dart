@@ -693,36 +693,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
           decoration: const BoxDecoration(
-            color: Color(0xFF0A0E1A),
+            color: Color(0xFF0F172A),
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top handle bar
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
+                // Header
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 18,
-                          backgroundColor: themeColor.withOpacity(0.2),
+                          radius: 20,
+                          backgroundColor: const Color(0xFFD4AF37).withOpacity(0.15),
                           child: Text(
                             nama.isNotEmpty ? nama[0].toUpperCase() : '?',
-                            style: TextStyle(
-                              color: themeColor,
+                            style: const TextStyle(
+                              color: Color(0xFFD4AF37),
                               fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -750,170 +755,224 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
+                      icon: Icon(Icons.close_rounded, color: Colors.white.withOpacity(0.5)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, color: Colors.white12),
-              if (item.transaksiList.length > 1) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                  child: SizedBox(
+                const SizedBox(height: 16),
+
+                // TOMBOL UTAMA: BAYAR SEKALIGUS GABUNGAN
+                if (item.transaksiList.length > 1) ...[
+                  Container(
                     width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BayarScreen(
-                              transaksi: item.transaksiList.first,
-                              isGabungan: true,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.payments, size: 20),
-                      label: Text(
-                        '💳 Bayar Gabungan Sekaligus (${formatRupiah(item.totalSisaHutang)})',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF59E0B).withOpacity(0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        elevation: 0,
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BayarScreen(
+                                transaksi: item.transaksiList.first,
+                                isGabungan: true,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.bolt_rounded,
+                                color: Colors.black87,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'BAYAR GABUNGAN SEKALIGUS (${formatRupiah(item.totalSisaHutang)})',
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: item.transaksiList.length,
-                  itemBuilder: (context, index) {
-                    final t = item.transaksiList[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: themeColor.withOpacity(0.25),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white.withOpacity(0.12))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'Atau bayar per-pinjaman:',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.45),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Pinjaman #${index + 1}',
-                                style: TextStyle(
-                                  color: themeColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: t.status == 'sebagian'
-                                      ? const Color(0xFFFFB300).withOpacity(0.2)
-                                      : const Color(0xFF42A5F5).withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  t.status == 'sebagian'
-                                      ? 'Bayar Sebagian'
-                                      : 'Aktif',
-                                  style: TextStyle(
-                                    color: t.status == 'sebagian'
-                                        ? const Color(0xFFFFB300)
-                                        : const Color(0xFF42A5F5),
+                      Expanded(child: Divider(color: Colors.white.withOpacity(0.12))),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // DAFTAR PINJAMAN
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: item.transaksiList.length,
+                    itemBuilder: (context, index) {
+                      final t = item.transaksiList[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.08),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Pinjaman #${index + 1}',
+                                  style: const TextStyle(
+                                    color: Color(0xFFD4AF37),
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 11,
+                                    fontSize: 14,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _buildInfoChip('Pinjam', formatRupiah(t.nominalPinjaman)),
-                              _buildInfoChip('Harus Bayar', formatRupiah(t.totalHarusBayar)),
-                              _buildInfoChip('Jatuh Tempo', formatTanggal(t.tanggalJatuhTempo)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.pop(ctx);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => BayarScreen(transaksi: t),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.payment, size: 16),
-                                  label: const Text('Bayar / Detail Pinjaman Ini'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeColor,
-                                    foregroundColor: Colors.black,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: t.status == 'sebagian'
+                                        ? const Color(0xFFFFB300).withOpacity(0.15)
+                                        : const Color(0xFF42A5F5).withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: t.status == 'sebagian'
+                                          ? const Color(0xFFFFB300).withOpacity(0.4)
+                                          : const Color(0xFF42A5F5).withOpacity(0.4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    t.status == 'sebagian'
+                                        ? 'Bayar Sebagian'
+                                        : 'Aktif',
+                                    style: TextStyle(
+                                      color: t.status == 'sebagian'
+                                          ? const Color(0xFFFFB300)
+                                          : const Color(0xFF42A5F5),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10.5,
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () async {
-                                  final confirmed = await ConfirmDialog.show(
-                                    context,
-                                    title: 'Tandai Lunas?',
-                                    message:
-                                        'Apakah anda yakin pinjaman #${index + 1} $nama sudah melunasi pembayaran?',
-                                    icon: Icons.check_circle_outline,
-                                    confirmColor: const Color(0xFF4CAF50),
-                                  );
-                                  if (confirmed) {
-                                    await provider.tandaiLunas(t);
-                                    if (ctx.mounted) Navigator.pop(ctx);
-                                  }
-                                },
-                                icon: const Icon(Icons.check_circle,
-                                    color: Color(0xFF4CAF50), size: 26),
-                                tooltip: 'Tandai Lunas',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildInfoChip('Pinjam', formatRupiah(t.nominalPinjaman)),
+                                _buildInfoChip('Harus Bayar', formatRupiah(t.totalHarusBayar)),
+                                _buildInfoChip('Jatuh Tempo', formatTanggal(t.tanggalJatuhTempo)),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BayarScreen(transaksi: t),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.payments_rounded, size: 16),
+                                    label: const Text(
+                                      'Bayar Pinjaman Ini',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFFD4AF37),
+                                      side: const BorderSide(color: Color(0xFFD4AF37)),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: () async {
+                                    final confirmed = await ConfirmDialog.show(
+                                      context,
+                                      title: 'Tandai Lunas?',
+                                      message:
+                                          'Apakah anda yakin pinjaman #${index + 1} $nama sudah melunasi pembayaran?',
+                                      icon: Icons.check_circle_outline,
+                                      confirmColor: const Color(0xFF4CAF50),
+                                    );
+                                    if (confirmed) {
+                                      await provider.tandaiLunas(t);
+                                      if (ctx.mounted) Navigator.pop(ctx);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.check_circle_rounded,
+                                      color: Color(0xFF4CAF50), size: 28),
+                                  tooltip: 'Tandai Lunas',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
