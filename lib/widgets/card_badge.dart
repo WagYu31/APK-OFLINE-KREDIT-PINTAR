@@ -21,23 +21,23 @@ class CardBadge extends StatelessWidget {
     // 1. Prioritas Diblokir
     if (isDiblokir) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFFE53935).withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.5)),
+          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.6)),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.lock_rounded, size: 12, color: Color(0xFFE53935)),
-            SizedBox(width: 4),
+            Icon(Icons.lock_rounded, size: 11, color: Color(0xFFEF4444)),
+            SizedBox(width: 3),
             Text(
               'Diblokir',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFE53935),
+                color: Color(0xFFEF4444),
               ),
             ),
           ],
@@ -53,15 +53,14 @@ class CardBadge extends StatelessWidget {
         GestureDetector(
           onTap: onKuningTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            margin: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFB300),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFF59E0B),
+              borderRadius: BorderRadius.circular(6),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFFB300).withValues(alpha: 0.3),
-                  blurRadius: 6,
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -69,12 +68,12 @@ class CardBadge extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning_rounded, size: 13, color: Colors.black87),
-                SizedBox(width: 4),
+                Icon(Icons.warning_rounded, size: 11, color: Colors.black87),
+                SizedBox(width: 3),
                 Text(
                   'Kartu Kuning',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -92,15 +91,14 @@ class CardBadge extends StatelessWidget {
         GestureDetector(
           onTap: onMerahTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            margin: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFFE53935),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFEF4444),
+              borderRadius: BorderRadius.circular(6),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE53935).withValues(alpha: 0.3),
-                  blurRadius: 6,
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -108,12 +106,12 @@ class CardBadge extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.block_rounded, size: 13, color: Colors.white),
-                SizedBox(width: 4),
+                Icon(Icons.block_rounded, size: 11, color: Colors.white),
+                SizedBox(width: 3),
                 Text(
                   'Kartu Merah',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -132,21 +130,21 @@ class CardBadge extends StatelessWidget {
           GestureDetector(
             onTap: onKuningTap ?? onMerahTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF10B981)),
-                  SizedBox(width: 4),
+                  Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF10B981)),
+                  SizedBox(width: 3),
                   Text(
                     'Status Baik',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF10B981),
                     ),
@@ -159,8 +157,10 @@ class CardBadge extends StatelessWidget {
       }
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: badges,
     );
   }

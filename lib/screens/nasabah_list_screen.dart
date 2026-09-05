@@ -581,36 +581,37 @@ class _NasabahListScreenState extends State<NasabahListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Text(
+                        nasabah.nama,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: nasabah.diblokir
+                              ? const Color(0xFFEF4444)
+                              : Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Flexible(
-                            child: Text(
-                              nasabah.nama,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: nasabah.diblokir
-                                    ? const Color(0xFFE53935)
-                                    : Colors.white,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                          Text(
+                            nasabah.nomorTelpon,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withOpacity(0.55),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           CardBadge(
                             isKuning: nasabah.kartuKuning,
                             isMerah: nasabah.kartuMerah,
                             isDiblokir: nasabah.diblokir,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        nasabah.nomorTelpon,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.4),
-                        ),
                       ),
                     ],
                   ),
